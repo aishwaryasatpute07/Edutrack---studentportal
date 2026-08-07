@@ -10,12 +10,10 @@ import com.edutrack.studentportal.model.User;
 import com.edutrack.studentportal.repository.UserRepository;
 import com.edutrack.studentportal.security.JwtService;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -27,18 +25,15 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
-    private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
     // Constructor Injection
     public UserService(UserRepository userRepository,
                        ModelMapper modelMapper,
-                       PasswordEncoder passwordEncoder,
                        JwtService jwtService) {
 
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
-        this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
     }
 
@@ -58,9 +53,7 @@ public class UserService {
         }
 
         User user = modelMapper.map(userDTO, User.class);
-
-        //Encrypt password
-        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        user.setPassword(userDTO.getPassword());
 
         System.out.println("Before Save: " + user.getPassword());
 
@@ -113,8 +106,7 @@ public class UserService {
 
     // Delete User
     public void deleteUser(String id){
-
-        User user = userRepository.findById(id)
+        userRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "User not found with id : " + id));
@@ -170,10 +162,7 @@ public class UserService {
         System.out.println("Input password: " + loginDTO.getPassword());
         System.out.println("DB password: " + user.getPassword());
 
-        if(!passwordEncoder.matches(
-                loginDTO.getPassword(),
-                user.getPassword()
-        )){
+        if (!user.getPassword().equals(loginDTO.getPassword())) {
             System.out.println("PASSWORD NOT MATCHING");
             throw new InvalidCredentialsException("Invalid password or username");
         }
