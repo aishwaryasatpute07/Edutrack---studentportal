@@ -1,16 +1,22 @@
 package com.edutrack.studentportal.service;
 
 import com.edutrack.studentportal.dto.StudentDTO;
+import com.edutrack.studentportal.exception.DuplicateResourceException;
 import com.edutrack.studentportal.exception.ResourceNotFoundException;
 import com.edutrack.studentportal.model.Batch;
 import com.edutrack.studentportal.model.Student;
+import com.edutrack.studentportal.model.User;
 import com.edutrack.studentportal.repository.BatchRepository;
 import com.edutrack.studentportal.repository.StudentRepository;
+import com.edutrack.studentportal.repository.UserRepository;
+import org.springframework.security.core.Authentication;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -20,35 +26,71 @@ import java.util.List;
 public class StudentService {
 
     private final StudentRepository studentRepository;
-
     private final BatchRepository batchRepository;
-
     private final ModelMapper modelMapper;
+    private final UserRepository userRepository;
 
     //Constructor injection
-    public StudentService(StudentRepository studentRepository, BatchRepository batchRepository, ModelMapper modelMapper) {
+    public StudentService(StudentRepository studentRepository,
+                          BatchRepository batchRepository,
+                          ModelMapper modelMapper,
+                          UserRepository userRepository) {
+
         this.studentRepository = studentRepository;
         this.batchRepository = batchRepository;
         this.modelMapper = modelMapper;
+        this.userRepository = userRepository;
     }
 
     //create student
-    public StudentDTO saveStudent(StudentDTO studentDTO){
+    public StudentDTO saveStudent(StudentDTO studentDTO) {
 
-        //Convert DTO -> entity
-        Student student = modelMapper.map(
-                studentDTO,
-                Student.class
-        );
+        //Check duplicate email
+        if (studentRepository.existsByEmail(
+                studentDTO.getEmail())) {
+            throw new DuplicateResourceException(
+                    "Student already exists with email : " + studentDTO.getEmail()
+            );
+        }
 
-        //save entity
-        Student saveStudent = studentRepository.save(student);
+        //Check duplicate mobile
+        if (studentRepository.existsByMobile(
+                studentDTO.getMobile())) {
+            throw new DuplicateResourceException(
+                    "Student already exists with mobile : " + studentDTO.getMobile()
+            );
+        }
 
-        //convert entity -> DTO
-        return modelMapper.map(
-                saveStudent,
-                StudentDTO.class
-        );
+        //DTO -> Entity
+        Student student = modelMapper.map(studentDTO, Student.class);
+
+        //If batchId is provided, check batch
+        if (studentDTO.getBatchId() != null &&
+                !studentDTO.getBatchId().isBlank()) {
+
+            //Check batch exists
+            Batch batch = batchRepository.findById(studentDTO.getBatchId())
+                    .orElseThrow(() ->
+                            new ResourceNotFoundException(
+                                    "Batch not found with id : "
+                                            + studentDTO.getBatchId()
+                            ));
+
+            //Count students already assigned to batch
+            long currentStudents =
+                    studentRepository.countByBatchId(studentDTO.getBatchId());
+
+            //Check capacity
+            if (currentStudents >= batch.getCapacity()) {
+                throw new RuntimeException("Batch is full");
+            }
+        }
+
+        //Save student
+        Student savedStudent = studentRepository.save(student);
+
+        //Entity -> DTO
+        return modelMapper.map(savedStudent, StudentDTO.class);
     }
 
     //get All students
@@ -74,6 +116,34 @@ public class StudentService {
         Student student = studentRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("student not found with id : "+id));
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        String username = authentication.getName();
+
+        //ADMIN can view any student
+        if(authentication.getAuthorities().stream()
+                .anyMatch(authority ->
+                        authority.getAuthority().equals("ROLE_ADMIN"))){
+
+            return modelMapper.map(student, StudentDTO.class);
+        }
+
+        //get logged-in students user record
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found"
+                        ));
+
+        //student can view only their own record
+        if(!id.equals(user.getStudentId())){
+
+            throw new AccessDeniedException(
+                    "yor are not allowed to access this student"
+            );
+        }
 
         return modelMapper.map(student, StudentDTO.class);
     }
@@ -114,22 +184,49 @@ public class StudentService {
 
 
     //Update student
-    public StudentDTO updateStudent(String id, StudentDTO studentDTO){
+    public StudentDTO updateStudent(String id, StudentDTO studentDTO) {
 
         Student existingStudent = studentRepository.findById(id)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException("student not found with id : "+id));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Student not found with id : " + id
+                        ));
 
-        //convert DTO -> Entity
-        Student student = modelMapper.map(studentDTO,Student.class);
+        //Check batch only if batchId is provided
+        if (studentDTO.getBatchId() != null &&
+                !studentDTO.getBatchId().isBlank()) {
 
+            //Check batch exists
+            Batch batch = batchRepository.findById(studentDTO.getBatchId())
+                    .orElseThrow(() ->
+                            new ResourceNotFoundException(
+                                    "Batch not found with id : "
+                                            + studentDTO.getBatchId()
+                            ));
+
+            //Only check capacity if student is moving to another batch
+            if (!studentDTO.getBatchId().equals(existingStudent.getBatchId())) {
+
+                long currentStudents =
+                        studentRepository.countByBatchId(studentDTO.getBatchId());
+
+                if (currentStudents >= batch.getCapacity()) {
+                    throw new RuntimeException("Batch is full");
+                }
+            }
+        }
+
+        //DTO -> Entity
+        Student student = modelMapper.map(studentDTO, Student.class);
+
+        //Keep existing ID
         student.setId(existingStudent.getId());
 
-        //save updated student
+        //Save updated student
         Student updatedStudent = studentRepository.save(student);
 
-        //return DTO not entity
-        return modelMapper.map(updatedStudent,StudentDTO.class);
+        //Return DTO
+        return modelMapper.map(updatedStudent, StudentDTO.class);
     }
 
     //delete student
@@ -172,25 +269,43 @@ public class StudentService {
     */
 
     //Assign batchId to STUDENT
-    public StudentDTO assignBatchToStudent(String id, String batchId){
+    public StudentDTO assignBatchToStudent(String id, String batchId) {
 
-        //check students exists
+        //1. Check student exists
         Student student = studentRepository.findById(id)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("student not found : "+id));
+                        new ResourceNotFoundException(
+                                "Student not found : " + id
+                        ));
 
-        //check batch exists
+        //2. Check batch exists
         Batch batch = batchRepository.findById(batchId)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("batch not found "+batchId));
+                        new ResourceNotFoundException(
+                                "Batch not found : " + batchId
+                        ));
 
-        //set batch id in a student
+        //3. If student is already in this batch
+        if (batchId.equals(student.getBatchId())) {
+            return modelMapper.map(student, StudentDTO.class);
+        }
+
+        //4. Count students already assigned to this batch
+        long currentStudents =
+                studentRepository.countByBatchId(batchId);
+
+        //5. Check batch capacity
+        if (currentStudents >= batch.getCapacity()) {
+            throw new RuntimeException("Batch is full");
+        }
+
+        //6. Assign batch
         student.setBatchId(batchId);
 
-        //save updated student
+        //7. Save student
         Student updatedStudent = studentRepository.save(student);
 
-        //return to DTO
+        //8. Return DTO
         return modelMapper.map(updatedStudent, StudentDTO.class);
     }
 }

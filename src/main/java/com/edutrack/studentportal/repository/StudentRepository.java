@@ -14,5 +14,12 @@ public interface StudentRepository extends MongoRepository<Student, String> {
     @Query("{'email': ?0}")
     Optional<Student> findStudentByEmail(String email);
 
+    //Check duplicate email
+    boolean existsByEmail(String email);
 
+    //Check duplicate mobile
+    boolean existsByMobile(String mobile);
+
+    //count student assigned to batch
+    long countByBatchId(String batchId);
 }

@@ -7,6 +7,7 @@ import com.edutrack.studentportal.exception.DuplicateResourceException;
 import com.edutrack.studentportal.exception.InvalidCredentialsException;
 import com.edutrack.studentportal.exception.ResourceNotFoundException;
 import com.edutrack.studentportal.model.User;
+import com.edutrack.studentportal.repository.StudentRepository;
 import com.edutrack.studentportal.repository.UserRepository;
 import com.edutrack.studentportal.security.JwtService;
 import org.modelmapper.ModelMapper;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -26,15 +28,21 @@ public class UserService {
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
     private final JwtService jwtService;
+    private final PasswordEncoder passwordEncoder;
+    private final StudentRepository studentRepository;
 
     // Constructor Injection
     public UserService(UserRepository userRepository,
                        ModelMapper modelMapper,
-                       JwtService jwtService) {
+                       JwtService jwtService,
+                       PasswordEncoder passwordEncoder,
+                       StudentRepository studentRepository) {
 
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
         this.jwtService = jwtService;
+        this.passwordEncoder = passwordEncoder;
+        this.studentRepository = studentRepository;
     }
 
     // Create User
@@ -52,10 +60,22 @@ public class UserService {
             );
         }
 
-        User user = modelMapper.map(userDTO, User.class);
-        user.setPassword(userDTO.getPassword());
+        if("STUDENT".equalsIgnoreCase((userDTO.getRole()))){
 
-        System.out.println("Before Save: " + user.getPassword());
+            if(userDTO.getStudentId() == null ||
+                    !studentRepository.existsById(userDTO.getStudentId())){
+
+                throw new ResourceNotFoundException(
+                        "student not found with id : "+userDTO.getStudentId()
+                );
+            }
+        }
+
+        User user = modelMapper.map(userDTO, User.class);
+
+        user.setPassword(
+                passwordEncoder.encode(userDTO.getPassword())
+        );
 
         User savedUser = userRepository.save(user);
 
@@ -159,15 +179,12 @@ public class UserService {
                 new ResourceNotFoundException("User not found")
         );
 
-        System.out.println("Input password: " + loginDTO.getPassword());
-        System.out.println("DB password: " + user.getPassword());
-
-        if (!user.getPassword().equals(loginDTO.getPassword())) {
-            System.out.println("PASSWORD NOT MATCHING");
+        if (!passwordEncoder.matches(
+                loginDTO.getPassword(),
+                user.getPassword()
+        )) {
             throw new InvalidCredentialsException("Invalid password or username");
         }
-
-        System.out.println("PASSWORD MATCHED");
 
         LoginResponseDTO response = modelMapper.map(user, LoginResponseDTO.class);
 

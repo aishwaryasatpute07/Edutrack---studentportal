@@ -2,6 +2,7 @@ package com.edutrack.studentportal.service;
 
 import com.edutrack.studentportal.dto.BatchDTO;
 import com.edutrack.studentportal.exception.ResourceNotFoundException;
+import com.edutrack.studentportal.exception.DuplicateResourceException;
 import com.edutrack.studentportal.model.Batch;
 import com.edutrack.studentportal.repository.BatchRepository;
 import com.edutrack.studentportal.repository.CourseRepository;
@@ -28,22 +29,39 @@ public class BatchService {
     }
 
     //create batch
-    public BatchDTO saveBatch(BatchDTO batchDTO){
+    public BatchDTO saveBatch(BatchDTO batchDTO) {
 
-        if(!courseRepository.existsById(batchDTO.getCourseId())){
+        //Check if exact same batch already exists
+        boolean duplicateBatch = batchRepository .existsByBatchNameAndCourseIdAndTrainerNameAndStartDateAndEndDateAndCapacityAndStatus(
+                batchDTO.getBatchName(),
+                batchDTO.getCourseId(),
+                batchDTO.getTrainerName(),
+                batchDTO.getStartDate(),
+                batchDTO.getEndDate(),
+                batchDTO.getCapacity(),
+                batchDTO.getStatus()
+        );
+
+        if (duplicateBatch) {
+            throw new DuplicateResourceException( "Same batch already exists" );
+        }
+
+        //Check course exists
+        if (!courseRepository.existsById(batchDTO.getCourseId())) {
             throw new ResourceNotFoundException(
-                    "Course not available with that id : "+batchDTO.getCourseId()
+                    "Course not available with that id : "
+                            + batchDTO.getCourseId()
             );
         }
 
         //DTO -> Entity
         Batch batch = modelMapper.map(batchDTO, Batch.class);
 
-        //save
+        //Save
         Batch savedBatch = batchRepository.save(batch);
 
         //Entity -> DTO
-        return modelMapper.map(batch, BatchDTO.class);
+        return modelMapper.map(savedBatch, BatchDTO.class);
     }
 
     //get all batches
@@ -138,7 +156,7 @@ public class BatchService {
         Batch updatedBatch = batchRepository.save(batch);
 
         //Entity -> DTO
-        return modelMapper.map(batch, BatchDTO.class);
+        return modelMapper.map(updatedBatch, BatchDTO.class);
     }
 
     //delete batch id
