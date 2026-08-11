@@ -1,6 +1,7 @@
 package com.edutrack.studentportal.service;
 
 import com.edutrack.studentportal.dto.CourseDTO;
+import com.edutrack.studentportal.exception.DuplicateResourceException;
 import com.edutrack.studentportal.exception.ResourceNotFoundException;
 import com.edutrack.studentportal.model.Course;
 import com.edutrack.studentportal.repository.CourseRepository;
@@ -12,7 +13,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class CourseService {
@@ -27,6 +27,17 @@ public class CourseService {
 
     //create student
     public CourseDTO saveCourse(CourseDTO courseDTO){
+
+        if(courseRepository.existsByCourseNameAndDurationAndFeesAndDescription(
+                courseDTO.getCourseName(),
+                courseDTO.getDuration(),
+                courseDTO.getFees(),
+                courseDTO.getDescription()
+        )){
+            throw new DuplicateResourceException(
+                    "Course already exists with the same details"
+            );
+        }
 
         //DTO -> Entity
         Course course = modelMapper.map(courseDTO, Course.class);
@@ -121,7 +132,9 @@ public class CourseService {
     public void deleteCourse(String id) {
 
         Course course = courseRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Course not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                "Course not found with id : " + id
+        ));
 
         courseRepository.delete(course);
     }

@@ -50,6 +50,15 @@ public class SecurityConfig {
                         //Batches -> ADMIN only
                         .requestMatchers("/batches/**").hasRole("ADMIN")
 
+                        //Attendance:
+                        //ADMIN and STUDENT can view attendance
+                        .requestMatchers(HttpMethod.GET, "/attendance/**")
+                        .hasAnyRole("ADMIN", "STUDENT")
+
+                        //ADMIN can create, update and delete attendance
+                        .requestMatchers("/attendance/**")
+                        .hasRole("ADMIN")
+
                         //everything else
                         .anyRequest().authenticated()
                 )

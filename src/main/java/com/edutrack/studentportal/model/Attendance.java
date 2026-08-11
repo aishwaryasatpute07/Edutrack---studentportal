@@ -3,6 +3,8 @@ package com.edutrack.studentportal.model;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDate;
+
 @Document(collection = "attendance")
 public class Attendance {
 
@@ -11,29 +13,20 @@ public class Attendance {
 
     private String studentId;
 
-    private String date;
+    private LocalDate date;
 
     private String status;
 
-
-    // No Argument Constructor
     public Attendance() {
-
     }
 
-
-    // Parameterized Constructor
     public Attendance(String id, String studentId,
-                      String date, String status) {
-
+                      LocalDate date, String status) {
         this.id = id;
         this.studentId = studentId;
         this.date = date;
         this.status = status;
     }
-
-
-    // Getters and Setters
 
     public String getId() {
         return id;
@@ -43,7 +36,6 @@ public class Attendance {
         this.id = id;
     }
 
-
     public String getStudentId() {
         return studentId;
     }
@@ -52,15 +44,13 @@ public class Attendance {
         this.studentId = studentId;
     }
 
-
-    public String getDate() {
+    public LocalDate getDate() {
         return date;
     }
 
-    public void setDate(String date) {
+    public void setDate(LocalDate date) {
         this.date = date;
     }
-
 
     public String getStatus() {
         return status;
@@ -69,5 +59,4 @@ public class Attendance {
     public void setStatus(String status) {
         this.status = status;
     }
-
 }

@@ -1,15 +1,12 @@
 package com.edutrack.studentportal.controller;
 
 import com.edutrack.studentportal.dto.CourseDTO;
-import com.edutrack.studentportal.model.Course;
 import com.edutrack.studentportal.service.CourseService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
-import org.w3c.dom.stylesheets.LinkStyle;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/courses")

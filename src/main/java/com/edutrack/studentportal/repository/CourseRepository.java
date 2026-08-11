@@ -9,4 +9,10 @@ public interface CourseRepository extends MongoRepository<Course, String> {
 
     List<Course> findByCourseNameContainingIgnoreCase(String courseName);
 
+    boolean existsByCourseNameAndDurationAndFeesAndDescription(
+            String courseName,
+            String duration,
+            double fees,
+            String description
+    );
 }
