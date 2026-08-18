@@ -3,6 +3,8 @@ package com.edutrack.studentportal.model;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDateTime;
+
 @Document(collection = "payments")
 public class Payment {
 
@@ -13,27 +15,44 @@ public class Payment {
 
     private double amount;
 
-    private String paymentDate;
+    private String orderId;
+
+    private String paymentId;
+
+    private String signature;
+
+    private String paymentMethod;
 
     private String status;
 
+    private LocalDateTime paymentDate;
 
-    // No Argument Constructor
+
+    // Default Constructor
     public Payment() {
-
     }
 
 
     // Parameterized Constructor
-    public Payment(String id, String studentId,
-                   double amount, String paymentDate,
-                   String status) {
+    public Payment(String id,
+                   String studentId,
+                   double amount,
+                   String orderId,
+                   String paymentId,
+                   String signature,
+                   String paymentMethod,
+                   String status,
+                   LocalDateTime paymentDate) {
 
         this.id = id;
         this.studentId = studentId;
         this.amount = amount;
-        this.paymentDate = paymentDate;
+        this.orderId = orderId;
+        this.paymentId = paymentId;
+        this.signature = signature;
+        this.paymentMethod = paymentMethod;
         this.status = status;
+        this.paymentDate = paymentDate;
     }
 
 
@@ -66,12 +85,39 @@ public class Payment {
     }
 
 
-    public String getPaymentDate() {
-        return paymentDate;
+    public String getOrderId() {
+        return orderId;
     }
 
-    public void setPaymentDate(String paymentDate) {
-        this.paymentDate = paymentDate;
+    public void setOrderId(String orderId) {
+        this.orderId = orderId;
+    }
+
+
+    public String getPaymentId() {
+        return paymentId;
+    }
+
+    public void setPaymentId(String paymentId) {
+        this.paymentId = paymentId;
+    }
+
+
+    public String getSignature() {
+        return signature;
+    }
+
+    public void setSignature(String signature) {
+        this.signature = signature;
+    }
+
+
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
     }
 
 
@@ -83,4 +129,12 @@ public class Payment {
         this.status = status;
     }
 
+
+    public LocalDateTime getPaymentDate() {
+        return paymentDate;
+    }
+
+    public void setPaymentDate(LocalDateTime paymentDate) {
+        this.paymentDate = paymentDate;
+    }
 }

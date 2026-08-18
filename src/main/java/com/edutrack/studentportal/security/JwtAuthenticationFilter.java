@@ -49,6 +49,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             String role = jwtService.extractRole(token);
 
+            System.out.println("Requested URL: " + request.getRequestURI());
+            System.out.println("JWT Username: " + username);
+            System.out.println("JWT Role: " + role);
+
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
                             username,

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EduTrack - Fee Payment</title>
+</head>
+
+<body>
+
+<h2>EduTrack Student Fee Payment</h2>
+
+<label>Student ID:</label>
+<br>
+<input type="text" id="studentId" placeholder="Enter Student ID">
+
+<br><br>
+
+<label>Amount:</label>
+<br>
+<input type="number" id="amount" placeholder="Enter Amount">
+
+<br><br>
+
+<label>JWT Token:</label>
+<br>
+<input type="text" id="token" placeholder="Paste your JWT token">
+
+<br><br>
+
+<button onclick="createOrder()">Pay Fees</button>
+
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+
+    async function createOrder() {
+
+        const studentId =
+            document.getElementById("studentId").value;
+
+        const amount =
+            document.getElementById("amount").value;
+
+        const token =
+            document.getElementById("token").value;
+
+
+        // Check required fields
+        if (!studentId) {
+            alert("Please enter Student ID");
+            return;
+        }
+
+        if (!amount || amount <= 0) {
+            alert("Please enter a valid amount");
+            return;
+        }
+
+        if (!token) {
+            alert("Please enter JWT token");
+            return;
+        }
+
+
+        // Call Spring Boot backend
+        const response = await fetch(
+            "/payments/create-order",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + token
+                },
+
+                body: JSON.stringify({
+                    studentId: studentId,
+                    amount: Number(amount)
+                })
+            }
+        );
+
+
+        // Check backend response
+        if (!response.ok) {
+
+            const errorText =
+                await response.text();
+
+            console.log(
+                "Backend error:",
+                errorText
+            );
+
+            alert(
+                "Unable to create payment order"
+            );
+
+            return;
+        }
+
+
+        // Get response from backend
+        const data =
+            await response.json();
+
+        console.log(
+            "Payment order:",
+            data
+        );
+
+
+        // Razorpay Checkout configuration
+        const options = {
+
+            // Razorpay TEST Key ID
+            key: "rzp_test_TPD9KFWqnxnLl2",
+
+            // Amount in paise
+            amount: data.amount * 100,
+
+            currency: "INR",
+
+            name: "EduTrack",
+
+            description: "Student Fee Payment",
+
+            order_id: data.orderId,
+
+
+            // Called after successful payment
+            handler: async function (response) {
+
+                console.log(
+                    "Payment ID:",
+                    response.razorpay_payment_id
+                );
+
+                console.log(
+                    "Order ID:",
+                    response.razorpay_order_id
+                );
+
+                console.log(
+                    "Signature:",
+                    response.razorpay_signature
+                );
+
+
+                // Send payment details
+                // to Spring Boot for verification
+
+                try {
+
+                    const verifyResponse =
+                        await fetch(
+                            "/payments/verify",
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/json",
+
+                                    "Authorization":
+                                        "Bearer " + token
+                                },
+
+                                body: JSON.stringify({
+
+                                    studentId:
+                                        studentId,
+
+                                    amount:
+                                        Number(amount),
+
+                                    orderId:
+                                        response.razorpay_order_id,
+
+                                    paymentId:
+                                        response.razorpay_payment_id,
+
+                                    signature:
+                                        response.razorpay_signature,
+
+                                    paymentMethod:
+                                        "RAZORPAY"
+                                })
+                            }
+                        );
+
+
+                    // Check verification response
+                    if (!verifyResponse.ok) {
+
+                        const errorText =
+                            await verifyResponse.text();
+
+                        console.log(
+                            "Verification error:",
+                            errorText
+                        );
+
+                        alert(
+                            "Payment was completed, but verification failed."
+                        );
+
+                        return;
+                    }
+
+
+                    // Get verified payment
+                    const verifiedPayment =
+                        await verifyResponse.json();
+
+
+                    console.log(
+                        "Verified payment:",
+                        verifiedPayment
+                    );
+
+
+                    alert(
+                        "Payment successful and verified!"
+                    );
+
+
+                } catch (error) {
+
+                    console.error(
+                        "Verification error:",
+                        error
+                    );
+
+                    alert(
+                        "Payment completed, but verification failed."
+                    );
+                }
+            }
+        };
+
+
+        // Create Razorpay object
+        const razorpay =
+            new Razorpay(options);
+
+
+        // Open Razorpay Checkout
+        razorpay.open();
+    }
+
+</script>
+
+</body>
+</html>

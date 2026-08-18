@@ -59,6 +59,22 @@ public class SecurityConfig {
                         .requestMatchers("/attendance/**")
                         .hasRole("ADMIN")
 
+                        // Payments
+                        .requestMatchers(HttpMethod.GET, "/payments/**")
+                        .hasAnyRole("ADMIN", "STUDENT")
+
+                        .requestMatchers(HttpMethod.POST, "/payments/create-order")
+                        .hasAnyRole("ADMIN", "STUDENT")
+
+                        .requestMatchers(HttpMethod.POST, "/payments/verify")
+                        .hasAnyRole("ADMIN", "STUDENT")
+
+                        .requestMatchers("/payments/**")
+                        .hasRole("ADMIN")
+
+                        .requestMatchers("/payment.html")
+                        .permitAll()
+
                         //everything else
                         .anyRequest().authenticated()
                 )
