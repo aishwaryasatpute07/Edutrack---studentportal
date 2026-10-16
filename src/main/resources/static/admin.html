@@ -1,0 +1,2323 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f3f4ef">
+    <title>EduTrack | Course administration</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --canvas: #f3f4ef;
+            --paper: #fff;
+            --ink: #172b29;
+            --muted: #677875;
+            --line: #dce4df;
+            --green: #176b57;
+            --green-dark: #0d4d40;
+            --mint: #d9eee5;
+            --orange: #bd5a2c;
+            --gold: #ead99a;
+            --red: #ae4037;
+            --shadow: 0 16px 42px rgb(23 43 41 / 8%);
+            font-family: "Aptos", "Segoe UI", sans-serif;
+            color: var(--ink);
+            background: var(--canvas);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-width: 320px;
+            background: linear-gradient(118deg, #f3f4ef 0%, #edf4ef 54%, #f4f0e7 100%);
+        }
+
+        button,
+        input,
+        select,
+        textarea {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        .shell {
+            min-height: 100vh;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 16px clamp(18px, 4vw, 58px);
+            border-bottom: 1px solid var(--line);
+            background: rgb(255 255 255 / 82%);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 750;
+        }
+
+        .brand-mark {
+            display: grid;
+            place-items: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 11px;
+            background: var(--green);
+            color: white;
+            font-weight: 800;
+        }
+
+        .brand-name {
+            font-size: 15px;
+        }
+
+        .brand-caption {
+            margin-top: 2px;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .top-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-nav {
+            display: flex;
+            gap: 4px;
+            overflow-x: auto;
+            padding: 9px clamp(18px, 4vw, 58px);
+            border-bottom: 1px solid var(--line);
+            background: rgb(255 255 255 / 76%);
+        }
+
+        .section-tab {
+            flex: 0 0 auto;
+            min-height: 36px;
+            border: 0;
+            border-radius: 5px;
+            padding: 0 13px;
+            background: transparent;
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 650;
+        }
+
+        .section-tab:hover,
+        .section-tab.active {
+            background: var(--mint);
+            color: var(--green-dark);
+        }
+
+        .admin-view {
+            margin-top: 22px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--paper);
+            box-shadow: var(--shadow);
+        }
+
+        .view-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 16px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .view-toolbar h2 {
+            margin: 0;
+            font-size: 17px;
+        }
+
+        .view-toolbar p {
+            margin: 5px 0 0;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .table-wrap {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 680px;
+        }
+
+        .admin-table th {
+            padding: 11px 14px;
+            background: #f8faf8;
+            color: var(--muted);
+            font-size: 10px;
+            text-align: left;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            white-space: nowrap;
+        }
+
+        .admin-table td {
+            padding: 12px 14px;
+            border-top: 1px solid #edf1ee;
+            font-size: 12px;
+            vertical-align: middle;
+        }
+
+        .admin-table tr:hover td {
+            background: #fbfcfb;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .table-actions button {
+            min-height: 30px;
+            padding: 0 9px;
+            font-size: 11px;
+        }
+
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            padding: 16px;
+        }
+
+        .overview-stat {
+            padding: 17px;
+            border-left: 3px solid var(--green);
+            background: #f7faf7;
+        }
+
+        .overview-stat span {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .overview-stat strong {
+            display: block;
+            margin-top: 7px;
+            font-size: 25px;
+        }
+
+        .report-content {
+            padding: 18px;
+        }
+
+        .report-select {
+            min-height: 39px;
+            min-width: 240px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 0 10px;
+            background: white;
+            color: var(--ink);
+        }
+
+        .report-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin: 18px 0;
+        }
+
+        .report-stat {
+            padding: 14px;
+            background: #f7faf7;
+            border-radius: 5px;
+        }
+
+        .report-stat span {
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .report-stat strong {
+            display: block;
+            margin-top: 6px;
+            font-size: 19px;
+        }
+
+        .chart-row {
+            display: grid;
+            grid-template-columns: minmax(90px, 140px) 1fr 44px;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            font-size: 12px;
+        }
+
+        .chart-track {
+            height: 10px;
+            border-radius: 5px;
+            background: #e7eeea;
+            overflow: hidden;
+        }
+
+        .chart-bar {
+            height: 100%;
+            border-radius: inherit;
+            background: var(--green);
+        }
+
+        .language-select,
+        .secondary,
+        .primary,
+        .danger {
+            min-height: 38px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 0 12px;
+            background: white;
+            color: var(--ink);
+        }
+
+        .primary {
+            border-color: var(--green);
+            background: var(--green);
+            color: white;
+            font-weight: 650;
+        }
+
+        .primary:hover {
+            background: var(--green-dark);
+        }
+
+        .secondary:hover {
+            border-color: var(--green);
+            color: var(--green-dark);
+        }
+
+        .danger {
+            border-color: #e3c6c2;
+            color: var(--red);
+        }
+
+        .danger:hover {
+            background: #fff5f3;
+        }
+
+        main {
+            width: min(1440px, 100%);
+            margin: 0 auto;
+            padding: 30px clamp(18px, 4vw, 58px) 64px;
+        }
+
+        .page-head {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 24px;
+            margin: 5px 0 24px;
+        }
+
+        .eyebrow {
+            margin: 0 0 7px;
+            color: var(--green);
+            font-size: 11px;
+            font-weight: 750;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(26px, 3vw, 34px);
+            line-height: 1.12;
+            letter-spacing: 0;
+        }
+
+        .subtitle {
+            margin: 8px 0 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--paper);
+            box-shadow: var(--shadow);
+        }
+
+        .metric {
+            padding: 17px 20px;
+            border-right: 1px solid var(--line);
+        }
+
+        .metric:last-child {
+            border-right: 0;
+        }
+
+        .metric-label {
+            display: block;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .metric-value {
+            display: block;
+            margin-top: 5px;
+            font-size: 24px;
+            font-weight: 730;
+        }
+
+        .work-area {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 330px;
+            gap: 18px;
+            margin-top: 20px;
+            align-items: start;
+        }
+
+        .workspace,
+        .side-panel {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: var(--paper);
+            box-shadow: var(--shadow);
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 9px;
+            padding: 15px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .search {
+            flex: 1 1 220px;
+            min-height: 39px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 0 12px;
+            outline: none;
+        }
+
+        .search:focus,
+        input:focus,
+        textarea:focus,
+        select:focus {
+            border-color: var(--green);
+            box-shadow: 0 0 0 3px rgb(23 107 87 / 12%);
+            outline: none;
+        }
+
+        .filter {
+            min-height: 39px;
+            min-width: 132px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 0 10px;
+            background: white;
+            color: var(--ink);
+        }
+
+        .course-list {
+            padding: 7px 0;
+        }
+
+        .course-row {
+            display: grid;
+            grid-template-columns: minmax(180px, 1fr) 120px 150px 88px;
+            align-items: center;
+            min-height: 64px;
+            gap: 14px;
+            padding: 8px 15px;
+            border-bottom: 1px solid #edf1ee;
+            cursor: pointer;
+            animation: enter .24s both;
+        }
+
+        .course-row:last-child {
+            border-bottom: 0;
+        }
+
+        .course-row:hover {
+            background: #f7faf7;
+        }
+
+        .course-row.selected {
+            background: #edf6f0;
+            box-shadow: inset 3px 0 var(--green);
+        }
+
+        .course-main {
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tree-branch {
+            width: 18px;
+            height: 1px;
+            border-top: 1px solid #9ab4a9;
+            flex: 0 0 auto;
+        }
+
+        .course-title {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-weight: 680;
+        }
+
+        .course-subtitle {
+            overflow: hidden;
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 12px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .badge {
+            display: inline-flex;
+            justify-content: center;
+            min-width: 74px;
+            padding: 5px 8px;
+            border-radius: 4px;
+            background: #eef2ef;
+            color: #52645f;
+            font-size: 11px;
+            font-weight: 720;
+            text-transform: uppercase;
+        }
+
+        .badge.open,
+        .badge.active {
+            background: var(--mint);
+            color: #176b57;
+        }
+
+        .badge.draft {
+            background: #f3ecd2;
+            color: #715c1d;
+        }
+
+        .badge.archived,
+        .badge.closed {
+            background: #f5e4e0;
+            color: #93453b;
+        }
+
+        .row-count {
+            color: var(--muted);
+            font-size: 12px;
+            text-align: right;
+        }
+
+        .list-head {
+            display: grid;
+            grid-template-columns: minmax(180px, 1fr) 120px 150px 88px;
+            gap: 14px;
+            padding: 10px 15px;
+            color: var(--muted);
+            font-size: 10px;
+            font-weight: 750;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            background: #f8faf8;
+        }
+
+        .empty {
+            padding: 42px 18px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .side-panel {
+            position: sticky;
+            top: 16px;
+            overflow: hidden;
+        }
+
+        .side-head {
+            padding: 18px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .side-head h2 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .side-head p {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .selected-course {
+            padding: 17px 18px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .selected-course h3 {
+            margin: 0 0 7px;
+            font-size: 18px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 9px 12px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .detail-grid strong {
+            color: var(--ink);
+            font-weight: 650;
+            text-align: right;
+        }
+
+        .audit-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 18px 8px;
+            font-size: 13px;
+            font-weight: 730;
+        }
+
+        .audit-list {
+            max-height: 340px;
+            overflow: auto;
+            padding: 0 18px 16px;
+        }
+
+        .audit-item {
+            position: relative;
+            margin: 10px 0 0;
+            padding: 0 0 2px 14px;
+            border-left: 1px solid #c5d8ce;
+        }
+
+        .audit-item:before {
+            position: absolute;
+            top: 3px;
+            left: -4px;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+            content: "";
+        }
+
+        .audit-action {
+            font-size: 11px;
+            font-weight: 760;
+        }
+
+        .audit-meta {
+            margin-top: 3px;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
+        }
+
+        .notice {
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            z-index: 5;
+            max-width: min(420px, calc(100vw - 36px));
+            padding: 12px 16px;
+            border-radius: 6px;
+            background: var(--ink);
+            color: white;
+            box-shadow: var(--shadow);
+            font-size: 13px;
+        }
+
+        .notice.error {
+            background: var(--red);
+        }
+
+        dialog {
+            width: min(640px, calc(100% - 28px));
+            max-height: 92vh;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 0;
+            color: var(--ink);
+            box-shadow: 0 24px 80px rgb(0 0 0 / 24%);
+        }
+
+        dialog::backdrop {
+            background: rgb(13 35 30 / 42%);
+            backdrop-filter: blur(2px);
+        }
+
+        .dialog-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 22px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .dialog-head h2 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .icon-button {
+            width: 34px;
+            height: 34px;
+            border: 1px solid var(--line);
+            border-radius: 5px;
+            background: white;
+            color: var(--ink);
+            font-size: 20px;
+            line-height: 1;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            padding: 20px 22px;
+        }
+
+        .field {
+            display: grid;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .field.full {
+            grid-column: 1 / -1;
+        }
+
+        .field label {
+            color: #41534e;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .field input,
+        .field select,
+        .field textarea {
+            width: 100%;
+            min-height: 39px;
+            border: 1px solid var(--line);
+            border-radius: 5px;
+            padding: 9px 10px;
+            background: white;
+            color: var(--ink);
+        }
+
+        .field textarea {
+            min-height: 76px;
+            resize: vertical;
+        }
+
+        .dialog-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 9px;
+            padding: 14px 22px 18px;
+            border-top: 1px solid var(--line);
+        }
+
+        .login-screen {
+            display: grid;
+            min-height: 100vh;
+            place-items: center;
+            padding: 22px;
+        }
+
+        .login-panel {
+            width: min(420px, 100%);
+            padding: 28px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: white;
+            box-shadow: var(--shadow);
+        }
+
+        .login-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .login-panel h1 {
+            font-size: 24px;
+        }
+
+        .login-panel .field {
+            margin-top: 16px;
+        }
+
+        .login-panel button {
+            width: 100%;
+            margin-top: 18px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @keyframes enter {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 980px) {
+            .work-area {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .side-panel {
+                position: static;
+            }
+
+            .audit-list {
+                max-height: 260px;
+            }
+        }
+
+        @media (max-width: 620px) {
+            main {
+                padding-top: 22px;
+            }
+
+            .page-head {
+                align-items: start;
+                flex-direction: column;
+            }
+
+            .metrics {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .metric:nth-child(2) {
+                border-right: 0;
+            }
+
+            .metric:nth-child(-n+2) {
+                border-bottom: 1px solid var(--line);
+            }
+
+            .list-head {
+                display: none;
+            }
+
+            .course-row {
+                grid-template-columns: minmax(0, 1fr) auto;
+                gap: 4px 10px;
+                padding: 12px;
+            }
+
+            .course-row> :nth-child(2) {
+                grid-column: 2;
+                grid-row: 1;
+            }
+
+            .course-row> :nth-child(3),
+            .course-row> :nth-child(4) {
+                grid-row: 2;
+            }
+
+            .row-count {
+                text-align: left;
+            }
+
+            .topbar {
+                padding: 12px 16px;
+            }
+
+            .section-nav {
+                padding: 7px 12px;
+            }
+
+            .section-tab {
+                padding: 0 10px;
+            }
+
+            .overview-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .report-stats {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .view-toolbar {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .brand-caption {
+                display: none;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                padding: 16px;
+            }
+
+            .field.full {
+                grid-column: auto;
+            }
+
+            .dialog-actions {
+                padding: 12px 16px 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <section id="loginScreen" class="login-screen">
+        <form id="loginForm" class="login-panel">
+            <div class="login-top">
+                <div class="brand"><span class="brand-mark">E</span>
+                    <div>
+                        <div class="brand-name">EduTrack</div>
+                        <div class="brand-caption" data-i18n="portalAccess">Portal access</div>
+                    </div>
+                </div><select id="loginLanguage" class="language-select" aria-label="Interface language">
+                    <option value="en">English</option>
+                    <option value="hi">हिन्दी</option>
+                </select>
+            </div>
+            <h1 data-i18n="portalSignIn">Sign in to EduTrack</h1>
+            <p class="subtitle" data-i18n="portalSignInHint">Use your portal account to continue.</p>
+            <div class="field"><label for="username" data-i18n="username">Username</label><input id="username"
+                    name="username" autocomplete="username" required></div>
+            <div class="field"><label for="password" data-i18n="password">Password</label><input id="password"
+                    name="password" type="password" autocomplete="current-password" required></div>
+            <button class="primary" type="submit" data-i18n="signInButton">Sign in</button>
+        </form>
+    </section>
+
+    <div id="app" class="shell hidden">
+        <header class="topbar">
+            <div class="brand"><span class="brand-mark">E</span>
+                <div>
+                    <div class="brand-name">EduTrack</div>
+                    <div id="brandCaption" class="brand-caption" data-i18n="adminWorkspace">Administration workspace</div>
+                </div>
+            </div>
+            <div class="top-actions">
+                <select id="language" class="language-select" aria-label="Interface language">
+                    <option value="en">English</option>
+                    <option value="hi">हिन्दी</option>
+                </select>
+                <button id="logoutButton" class="secondary" data-i18n="signOut">Sign out</button>
+            </div>
+        </header>
+        <nav class="section-nav" aria-label="Administration sections">
+            <button class="section-tab active" data-view="overview" data-i18n="navOverview">Overview</button>
+            <button class="section-tab" data-view="courses" data-i18n="navCourses">Courses</button>
+            <button class="section-tab" data-view="students" data-i18n="navStudents">Students</button>
+            <button class="section-tab" data-view="users" data-i18n="navUsers">Accounts</button>
+            <button class="section-tab" data-view="batches" data-i18n="navBatches">Batches</button>
+            <button class="section-tab" data-view="attendance" data-i18n="navAttendance">Attendance</button>
+            <button class="section-tab" data-view="enrollments" data-i18n="navEnrollments">Enrollments</button>
+            <button class="section-tab" data-view="payments" data-i18n="navPayments">Payments</button>
+            <button class="section-tab" data-view="reports" data-i18n="navReports">Reports</button>
+            <button class="section-tab" data-view="academics" data-i18n="academicRecords">Academic records</button>
+        </nav>
+        <section id="studentWorkspace" class="hidden" aria-labelledby="studentHeading">
+            <div class="view-toolbar">
+                <div>
+                    <h1 id="studentHeading" data-i18n="studentWelcome">Student dashboard</h1>
+                    <p id="studentProfile" class="subtitle"></p>
+                    <p id="studentAcademicProfile" class="subtitle"></p>
+                </div>
+                <button id="studentRefreshButton" class="secondary" data-i18n="refresh">Refresh</button>
+            </div>
+            <div class="overview-grid">
+                <div class="overview-stat"><span data-i18n="navEnrollments">Courses</span><strong id="studentCourseCount">0</strong></div>
+                <div class="overview-stat"><span data-i18n="attendanceRate">Attendance</span><strong id="studentAttendanceRate">—</strong></div>
+                <div class="overview-stat"><span data-i18n="averageScore">Average score</span><strong id="studentAverageScore">—</strong></div>
+                <div class="overview-stat"><span data-i18n="totalDue">Amount due</span><strong id="studentAmountDue">₹0</strong></div>
+                <div class="overview-stat"><span data-i18n="workingDays">Working days</span><strong id="studentWorkingDays">0</strong></div>
+                <div class="overview-stat"><span data-i18n="daysPresent">Days present</span><strong id="studentDaysPresent">0</strong></div>
+                <div class="overview-stat"><span data-i18n="daysAbsent">Days absent</span><strong id="studentDaysAbsent">0</strong></div>
+            </div>
+            <section class="admin-view">
+                <div class="view-toolbar"><h2 data-i18n="studentCourses">My courses</h2></div>
+                <div class="table-wrap"><table class="admin-table">
+                    <thead><tr><th data-i18n="course">Course</th><th data-i18n="status">Status</th><th data-i18n="progress">Progress</th><th data-i18n="attendanceRate">Attendance</th><th data-i18n="averageScore">Average score</th></tr></thead>
+                    <tbody id="studentCoursesTable"></tbody>
+                </table></div>
+            </section>
+            <section class="admin-view">
+                <div class="view-toolbar"><h2 data-i18n="studentAcademicRecords">Marks and backlogs</h2><button id="studentMarksheetDownload" class="secondary" data-i18n="downloadMarksheet">Download marksheet</button></div>
+                <div class="table-wrap"><table class="admin-table">
+                    <thead><tr><th data-i18n="course">Course</th><th data-i18n="subject">Subject</th><th data-i18n="examination">Examination</th><th data-i18n="attempt">Attempt</th><th data-i18n="marks">Marks</th><th data-i18n="result">Result</th><th data-i18n="updated">Updated</th></tr></thead>
+                    <tbody id="studentAcademicTable"></tbody>
+                </table></div>
+            </section>
+            <section class="admin-view">
+                <div class="view-toolbar"><h2 data-i18n="navAttendance">Attendance</h2><button id="studentAttendanceDownload" class="secondary" data-i18n="downloadReport">Download report</button></div>
+                <div id="studentAttendanceChart" class="report-content"></div>
+                <div class="table-wrap"><table class="admin-table">
+                    <thead><tr><th data-i18n="date">Date</th><th data-i18n="status">Status</th></tr></thead>
+                    <tbody id="studentAttendanceTable"></tbody>
+                </table></div>
+            </section>
+            <section class="admin-view">
+                <div class="view-toolbar"><h2 data-i18n="studentFees">Course fees</h2></div>
+                <div class="table-wrap"><table class="admin-table">
+                    <thead><tr><th data-i18n="course">Course</th><th data-i18n="fee">Fee</th><th data-i18n="paidAmount">Paid</th><th data-i18n="pendingAmount">Due</th><th data-i18n="status">Status</th></tr></thead>
+                    <tbody id="studentFeesTable"></tbody>
+                </table></div>
+            </section>
+            <section class="admin-view">
+                <div class="view-toolbar"><h2 data-i18n="paymentHistory">Payment history</h2></div>
+                <div class="table-wrap"><table class="admin-table">
+                    <thead><tr><th data-i18n="course">Course</th><th data-i18n="amount">Amount</th><th data-i18n="status">Status</th><th data-i18n="date">Date</th><th></th></tr></thead>
+                    <tbody id="studentPaymentsTable"></tbody>
+                </table></div>
+            </section>
+            <section class="admin-view">
+                <div class="view-toolbar"><h2 data-i18n="hallTickets">Examination hall tickets</h2></div>
+                <div class="table-wrap"><table class="admin-table">
+                    <thead><tr><th data-i18n="course">Course</th><th data-i18n="examination">Examination</th><th data-i18n="date">Date</th><th data-i18n="startTime">Start time</th><th data-i18n="venue">Venue</th><th data-i18n="seatNumber">Seat</th><th></th></tr></thead>
+                    <tbody id="studentHallTicketsTable"></tbody>
+                </table></div>
+            </section>
+        </section>
+        <section id="instructorWorkspace" class="hidden" aria-labelledby="instructorHeading">
+            <div class="view-toolbar">
+                <div><h1 id="instructorHeading" data-i18n="instructorDashboard">Instructor dashboard</h1><p id="instructorProfile" class="subtitle" data-i18n="assignedStudentsHint">Students assigned to your batches.</p></div>
+                <button id="instructorRefreshButton" class="secondary" data-i18n="refresh">Refresh</button>
+            </div>
+            <section class="admin-view">
+                <div class="view-toolbar"><h2 data-i18n="assignedStudents">Assigned students</h2></div>
+                <div class="table-wrap"><table class="admin-table">
+                    <thead><tr><th data-i18n="student">Student</th><th data-i18n="course">Course</th><th data-i18n="batch">Batch</th><th></th></tr></thead>
+                    <tbody id="instructorStudentsTable"></tbody>
+                </table></div>
+            </section>
+            <section class="admin-view">
+                <div class="view-toolbar"><div><h2 id="instructorStudentHeading" data-i18n="selectStudent">Select a student</h2><p id="instructorStudentMeta" class="subtitle"></p></div><div><button id="instructorAddAttendance" class="secondary" disabled data-i18n="addAttendance">Record attendance</button> <button id="instructorAddMark" class="primary" disabled data-i18n="addResult">Add result</button></div></div>
+                <div class="table-wrap"><table class="admin-table">
+                    <thead><tr><th data-i18n="date">Date</th><th data-i18n="status">Status</th><th></th></tr></thead>
+                    <tbody id="instructorAttendanceTable"></tbody>
+                </table></div>
+                <div class="table-wrap"><table class="admin-table">
+                    <thead><tr><th data-i18n="course">Course</th><th data-i18n="subject">Subject</th><th data-i18n="examination">Examination</th><th data-i18n="attempt">Attempt</th><th data-i18n="marks">Marks</th><th data-i18n="result">Result</th></tr></thead>
+                    <tbody id="instructorAcademicTable"></tbody>
+                </table></div>
+            </section>
+        </section>
+        <main>
+            <div id="coursePageHead" class="page-head course-only">
+                <div>
+                    <p class="eyebrow" data-i18n="catalogue">ACADEMIC CATALOGUE</p>
+                    <h1 data-i18n="courseManagement">Course management</h1>
+                    <p class="subtitle" data-i18n="hierarchySubtitle">Organize courses into a clear parent and module
+                        structure.</p>
+                </div>
+                <button id="newCourseButton" class="primary" data-i18n="newCourse">+ New course</button>
+            </div>
+            <section id="courseMetrics" class="metrics course-only" aria-label="Course summary">
+                <div class="metric"><span class="metric-label" data-i18n="totalCourses">Total courses</span><strong
+                        id="totalCount" class="metric-value">0</strong></div>
+                <div class="metric"><span class="metric-label" data-i18n="activeCourses">Active courses</span><strong
+                        id="activeCount" class="metric-value">0</strong></div>
+                <div class="metric"><span class="metric-label" data-i18n="topLevel">Top-level courses</span><strong
+                        id="rootCount" class="metric-value">0</strong></div>
+                <div class="metric"><span class="metric-label" data-i18n="modules">Modules</span><strong id="childCount"
+                        class="metric-value">0</strong></div>
+            </section>
+            <div id="courseWorkspace" class="work-area course-only">
+                <section class="workspace" aria-label="Course hierarchy">
+                    <div class="toolbar">
+                        <input id="search" class="search" type="search" data-i18n-placeholder="searchCourses"
+                            placeholder="Search courses or instructors">
+                        <select id="statusFilter" class="filter" aria-label="Filter by status">
+                            <option value="" data-i18n="allStatuses">All statuses</option>
+                            <option value="DRAFT">Draft</option>
+                            <option value="OPEN">Open</option>
+                            <option value="ACTIVE">Active</option>
+                            <option value="CLOSED">Closed</option>
+                            <option value="ARCHIVED">Archived</option>
+                        </select>
+                        <button id="refreshButton" class="secondary" data-i18n="refresh">Refresh</button>
+                    </div>
+                    <div class="list-head"><span data-i18n="course">Course</span><span
+                            data-i18n="status">Status</span><span data-i18n="instructor">Instructor</span><span
+                            data-i18n="enrolled">Enrolled</span></div>
+                    <div id="courseList" class="course-list"></div>
+                </section>
+                <aside class="side-panel">
+                    <div class="side-head">
+                        <h2 data-i18n="courseDetails">Course details</h2>
+                        <p data-i18n="selectCourse">Select a course to view its details and history.</p>
+                    </div>
+                    <div id="selectedDetails" class="selected-course">
+                        <div class="empty" data-i18n="noCourseSelected">No course selected</div>
+                    </div>
+                    <div class="audit-title"><span data-i18n="activityHistory">Activity history</span><span
+                            id="auditCount" class="badge">0</span></div>
+                    <div id="auditList" class="audit-list">
+                        <div class="empty" data-i18n="selectForHistory">Select a course to inspect its audit history.
+                        </div>
+                    </div>
+                </aside>
+            </div>
+            <section id="overviewView" class="admin-view">
+                <div class="view-toolbar">
+                    <div>
+                        <h2 data-i18n="overviewHeading">Portal overview</h2>
+                        <p data-i18n="overviewHint">Current records across the student portal.</p>
+                    </div><button class="secondary" data-refresh-view data-i18n="refresh">Refresh</button>
+                </div>
+                <div class="overview-grid">
+                    <div class="overview-stat"><span data-i18n="navCourses">Courses</span><strong
+                            id="overviewCourses">0</strong></div>
+                    <div class="overview-stat"><span data-i18n="navStudents">Students</span><strong
+                            id="overviewStudents">0</strong></div>
+                    <div class="overview-stat"><span data-i18n="navUsers">Accounts</span><strong
+                            id="overviewUsers">0</strong></div>
+                    <div class="overview-stat"><span data-i18n="navBatches">Batches</span><strong
+                            id="overviewBatches">0</strong></div>
+                    <div class="overview-stat"><span data-i18n="navAttendance">Attendance records</span><strong
+                            id="overviewAttendance">0</strong></div>
+                    <div class="overview-stat"><span data-i18n="navEnrollments">Enrollments</span><strong
+                            id="overviewEnrollments">0</strong></div>
+                    <div class="overview-stat"><span data-i18n="navPayments">Payment orders</span><strong
+                            id="overviewPayments">0</strong></div>
+                    <div class="overview-stat"><span data-i18n="verifiedPayments">Verified payments</span><strong
+                            id="overviewVerified">0</strong></div>
+                    <div class="overview-stat"><span data-i18n="collectedFees">Fees collected</span><strong
+                            id="overviewCollected">₹0</strong></div>
+                </div>
+            </section>
+            <section id="studentsView" class="admin-view hidden">
+                <div class="view-toolbar">
+                    <div>
+                        <h2 data-i18n="navStudents">Students</h2>
+                        <p data-i18n="studentsHint">Manage student profiles and batch assignments.</p>
+                    </div><button class="primary" data-create="students" data-i18n="addStudent">+ Add student</button>
+                </div>
+                <div class="table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th data-i18n="student">Student</th>
+                                <th>Email</th>
+                                <th data-i18n="mobile">Mobile</th>
+                                <th data-i18n="navBatches">Batch</th>
+                                <th data-i18n="fee">Fees</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentsTable"></tbody>
+                    </table>
+                </div>
+            </section>
+            <section id="usersView" class="admin-view hidden">
+                <div class="view-toolbar">
+                    <div>
+                        <h2 data-i18n="navUsers">Accounts</h2>
+                        <p data-i18n="usersHint">Create and remove portal accounts. Passwords are never displayed.
+                        </p>
+                    </div><button class="primary" data-create="users" data-i18n="addUser">+ Add account</button>
+                </div>
+                <div class="table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th data-i18n="username">Username</th>
+                                <th data-i18n="email">Email</th>
+                                <th data-i18n="role">Role</th>
+                                <th data-i18n="linkedStudent">Student link</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTable"></tbody>
+                    </table>
+                </div>
+            </section>
+            <section id="batchesView" class="admin-view hidden">
+                <div class="view-toolbar">
+                    <div>
+                        <h2 data-i18n="navBatches">Batches</h2>
+                        <p data-i18n="batchesHint">Manage course cohorts, trainers, and capacity.</p>
+                    </div><button class="primary" data-create="batches" data-i18n="addBatch">+ Add batch</button>
+                </div>
+                <div class="table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th data-i18n="batchName">Batch</th>
+                                <th data-i18n="course">Course</th>
+                                <th data-i18n="trainer">Trainer</th>
+                                <th data-i18n="dates">Dates</th>
+                                <th data-i18n="capacity">Capacity</th>
+                                <th data-i18n="status">Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="batchesTable"></tbody>
+                    </table>
+                </div>
+            </section>
+            <section id="attendanceView" class="admin-view hidden">
+                <div class="view-toolbar">
+                    <div>
+                        <h2 data-i18n="navAttendance">Attendance</h2>
+                        <p data-i18n="attendanceHint">Record and correct attendance for batch-assigned students.</p>
+                    </div><button class="primary" data-create="attendance" data-i18n="addAttendance">+ Record
+                        attendance</button>
+                </div>
+                <div class="table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th data-i18n="student">Student</th>
+                                <th data-i18n="course">Course</th>
+                                <th data-i18n="date">Date</th>
+                                <th data-i18n="status">Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceTable"></tbody>
+                    </table>
+                </div>
+            </section>
+            <section id="enrollmentsView" class="admin-view hidden">
+                <div class="view-toolbar">
+                    <div>
+                        <h2 data-i18n="navEnrollments">Enrollments</h2>
+                        <p data-i18n="enrollmentsHint">Manage student course registrations and progress.</p>
+                    </div><button class="primary" data-create="enrollments" data-i18n="addEnrollment">+ Enroll
+                        student</button>
+                </div>
+                <div class="table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th data-i18n="student">Student</th>
+                                <th data-i18n="course">Course</th>
+                                <th data-i18n="status">Status</th>
+                                <th data-i18n="progress">Progress</th>
+                                <th data-i18n="attendance">Attendance</th>
+                                <th data-i18n="feeStatus">Fee status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="enrollmentsTable"></tbody>
+                    </table>
+                </div>
+            </section>
+            <section id="paymentsView" class="admin-view hidden">
+                <div class="view-toolbar">
+                    <div>
+                        <h2 data-i18n="navPayments">Payments</h2>
+                        <p data-i18n="paymentsHint">Inspect Razorpay orders and fee collection; signatures are never
+                            shown.</p>
+                    </div><button class="secondary" data-refresh-view data-i18n="refresh">Refresh</button>
+                </div>
+                <div class="view-toolbar">
+                    <div>
+                        <h2 data-i18n="feeBalances">Course fee balances</h2>
+                        <p data-i18n="feeBalancesHint">Verified payments only count toward collected fees.</p>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th data-i18n="course">Course</th>
+                                <th data-i18n="enrolledStudents">Enrolled students</th>
+                                <th data-i18n="totalDue">Total due</th>
+                                <th data-i18n="collectedFees">Collected</th>
+                                <th data-i18n="pendingFees">Pending</th>
+                            </tr>
+                        </thead>
+                        <tbody id="feeBalancesTable"></tbody>
+                    </table>
+                </div>
+                <div class="table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th data-i18n="student">Student</th>
+                                <th data-i18n="course">Course</th>
+                                <th data-i18n="amount">Amount</th>
+                                <th data-i18n="order">Order</th>
+                                <th data-i18n="payment">Payment</th>
+                                <th data-i18n="method">Method</th>
+                                <th data-i18n="status">Status</th>
+                                <th data-i18n="date">Date</th>
+                                <th data-i18n="downloadReceipt">Receipt</th>
+                            </tr>
+                        </thead>
+                        <tbody id="paymentsTable"></tbody>
+                    </table>
+                </div>
+            </section>
+            <section id="reportsView" class="admin-view hidden">
+                <div class="view-toolbar">
+                    <div>
+                        <h2 data-i18n="navReports">Reports</h2>
+                        <p data-i18n="reportsHint">Review course enrollment, scores, attendance, and pass rate.</p>
+                    </div><select id="reportCourse" class="report-select" aria-label="Select course"></select>
+                </div>
+                <div id="reportContent" class="report-content">
+                    <div class="empty" data-i18n="selectReportCourse">Select a course to load its report.</div>
+                </div>
+            </section>
+            <section id="academicsView" class="admin-view hidden">
+                <div class="view-toolbar">
+                    <div><h2 data-i18n="academicRecords">Academic records</h2><p data-i18n="academicRecordsHint">Record subject-wise exam results and backlog history.</p></div>
+                    <button class="primary" data-create="academicRecords" data-i18n="addResult">Add result</button>
+                </div>
+                <div class="table-wrap"><table class="admin-table">
+                    <thead><tr><th data-i18n="student">Student</th><th data-i18n="course">Course</th><th data-i18n="subject">Subject</th><th data-i18n="examination">Examination</th><th data-i18n="attempt">Attempt</th><th data-i18n="marks">Marks</th><th data-i18n="result">Result</th><th></th></tr></thead>
+                    <tbody id="academicRecordsTable"></tbody>
+                </table></div>
+                <div class="view-toolbar">
+                    <div><h2 data-i18n="hallTickets">Hall tickets</h2><p data-i18n="hallTicketsHint">Issue examination tickets for enrolled students.</p></div>
+                    <button class="primary" data-create="hallTickets" data-i18n="issueHallTicket">Issue hall ticket</button>
+                </div>
+                <div class="table-wrap"><table class="admin-table">
+                    <thead><tr><th data-i18n="student">Student</th><th data-i18n="course">Course</th><th data-i18n="examination">Examination</th><th data-i18n="date">Date</th><th data-i18n="startTime">Start time</th><th data-i18n="venue">Venue</th><th data-i18n="seatNumber">Seat</th><th></th></tr></thead>
+                    <tbody id="hallTicketsTable"></tbody>
+                </table></div>
+            </section>
+        </main>
+    </div>
+
+    <dialog id="courseDialog">
+        <form id="courseForm">
+            <div class="dialog-head">
+                <h2 id="dialogTitle" data-i18n="newCourse">New course</h2><button id="closeDialog" class="icon-button"
+                    type="button" aria-label="Close">×</button>
+            </div>
+            <input id="courseId" type="hidden">
+            <div class="form-grid">
+                <div class="field"><label for="courseName" data-i18n="courseName">Course name</label><input
+                        id="courseName" required maxlength="120"></div>
+                <div class="field"><label for="parentCourse" data-i18n="parentCourse">Parent course</label><select
+                        id="parentCourse">
+                        <option value="" data-i18n="noParent">No parent (top level)</option>
+                    </select></div>
+                <div class="field"><label for="duration" data-i18n="duration">Duration</label><input id="duration"
+                        required placeholder="e.g. 8 weeks"></div>
+                <div class="field"><label for="fees" data-i18n="courseFee">Fee (INR)</label><input id="fees"
+                        type="number" min="0.01" step="0.01" required></div>
+                <div class="field"><label for="statusInput" data-i18n="status">Status</label><select id="statusInput">
+                        <option>DRAFT</option>
+                        <option>OPEN</option>
+                        <option>ACTIVE</option>
+                        <option>CLOSED</option>
+                        <option>ARCHIVED</option>
+                    </select></div>
+                <div class="field"><label for="instructor" data-i18n="instructor">Instructor</label><input
+                        id="instructor"></div>
+                <div class="field"><label for="capacity" data-i18n="capacity">Capacity</label><input id="capacity"
+                        type="number" min="1" step="1"></div>
+                <div class="field"><label for="startDate" data-i18n="startDate">Start date</label><input id="startDate"
+                        type="date"></div>
+                <div class="field"><label for="endDate" data-i18n="endDate">End date</label><input id="endDate"
+                        type="date"></div>
+                <div class="field full"><label for="descriptionEn" data-i18n="descriptionEnglish">Description ·
+                        English</label><textarea id="descriptionEn" required></textarea></div>
+                <div class="field full"><label for="descriptionHi" data-i18n="descriptionHindi">Description ·
+                        हिन्दी</label><textarea id="descriptionHi"></textarea></div>
+            </div>
+            <div class="dialog-actions"><button id="cancelDialog" class="secondary" type="button"
+                    data-i18n="cancel">Cancel</button><button class="primary" type="submit" data-i18n="saveCourse">Save
+                    course</button></div>
+        </form>
+    </dialog>
+    <dialog id="recordDialog">
+        <form id="recordForm">
+            <div class="dialog-head">
+                <h2 id="recordTitle"></h2><button id="recordClose" class="icon-button" type="button"
+                    aria-label="Close">×</button>
+            </div>
+            <div id="recordFields" class="form-grid"></div>
+            <div class="dialog-actions"><button id="recordCancel" class="secondary" type="button"
+                    data-i18n="cancel">Cancel</button><button class="primary" type="submit"
+                    data-i18n="save">Save</button></div>
+        </form>
+    </dialog>
+    <dialog id="instructorDialog">
+        <form id="instructorForm">
+            <div class="dialog-head"><h2 id="instructorDialogTitle"></h2><button id="instructorDialogClose" class="icon-button" type="button" aria-label="Close">×</button></div>
+            <div id="instructorFields" class="form-grid"></div>
+            <div class="dialog-actions"><button id="instructorDialogCancel" class="secondary" type="button" data-i18n="cancel">Cancel</button><button class="primary" type="submit" data-i18n="save">Save</button></div>
+        </form>
+    </dialog>
+    <div id="notice" class="notice hidden" role="status" aria-live="polite"></div>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+        const API = "";
+        const translations = {
+            en: { adminAccess: "Administrator access", signIn: "Sign in to manage courses", signInHint: "Use your administrator account to continue.", username: "Username", password: "Password", signInButton: "Sign in", adminWorkspace: "Administration workspace", signOut: "Sign out", catalogue: "ACADEMIC CATALOGUE", courseManagement: "Course management", hierarchySubtitle: "Organize courses into a clear parent and module structure.", newCourse: "+ New course", totalCourses: "Total courses", activeCourses: "Active courses", topLevel: "Top-level courses", modules: "Modules", searchCourses: "Search courses or instructors", allStatuses: "All statuses", refresh: "Refresh", course: "Course", status: "Status", instructor: "Instructor", enrolled: "Enrolled", courseDetails: "Course details", selectCourse: "Select a course to view its details and history.", noCourseSelected: "No course selected", activityHistory: "Activity history", selectForHistory: "Select a course to inspect its audit history.", courseName: "Course name", parentCourse: "Parent course", noParent: "No parent (top level)", duration: "Duration", courseFee: "Fee (INR)", capacity: "Capacity", startDate: "Start date", endDate: "End date", descriptionEnglish: "Description · English", descriptionHindi: "Description · हिन्दी", cancel: "Cancel", saveCourse: "Save course", edit: "Edit", delete: "Delete", fee: "Fee", students: "Students", children: "Modules", root: "Top level", none: "Not assigned", loading: "Loading…", empty: "No courses match these filters.", noHistory: "No recorded actions for this course.", deleted: "Course deleted.", saved: "Course saved.", loaded: "Course data refreshed.", needLogin: "Sign in failed. Check your credentials.", confirmDelete: "Delete this course? This cannot be undone.", deleteChildren: "Reassign or delete child courses before deleting this course.", loadError: "Could not load courses. Check the API server and your session.", loginRequired: "Your session expired. Please sign in again.", parentSelf: "A course cannot be its own parent." },
+            hi: { adminAccess: "प्रशासक प्रवेश", signIn: "पाठ्यक्रम प्रबंधन के लिए साइन इन करें", signInHint: "जारी रखने के लिए अपने प्रशासक खाते का उपयोग करें।", username: "उपयोगकर्ता नाम", password: "पासवर्ड", signInButton: "साइन इन", adminWorkspace: "प्रशासन कार्यक्षेत्र", signOut: "साइन आउट", catalogue: "शैक्षणिक सूची", courseManagement: "पाठ्यक्रम प्रबंधन", hierarchySubtitle: "पाठ्यक्रमों को मुख्य पाठ्यक्रम और मॉड्यूल में व्यवस्थित करें।", newCourse: "+ नया पाठ्यक्रम", totalCourses: "कुल पाठ्यक्रम", activeCourses: "सक्रिय पाठ्यक्रम", topLevel: "मुख्य पाठ्यक्रम", modules: "मॉड्यूल", searchCourses: "पाठ्यक्रम या प्रशिक्षक खोजें", allStatuses: "सभी स्थितियाँ", refresh: "रीफ़्रेश", course: "पाठ्यक्रम", status: "स्थिति", instructor: "प्रशिक्षक", enrolled: "नामांकित", courseDetails: "पाठ्यक्रम विवरण", selectCourse: "विवरण और इतिहास देखने के लिए पाठ्यक्रम चुनें।", noCourseSelected: "कोई पाठ्यक्रम नहीं चुना गया", activityHistory: "गतिविधि इतिहास", selectForHistory: "ऑडिट इतिहास देखने के लिए पाठ्यक्रम चुनें।", courseName: "पाठ्यक्रम का नाम", parentCourse: "मुख्य पाठ्यक्रम", noParent: "कोई मुख्य पाठ्यक्रम नहीं", duration: "अवधि", courseFee: "शुल्क (INR)", capacity: "क्षमता", startDate: "आरंभ तिथि", endDate: "समाप्ति तिथि", descriptionEnglish: "विवरण · English", descriptionHindi: "विवरण · हिन्दी", cancel: "रद्द करें", saveCourse: "पाठ्यक्रम सहेजें", edit: "संपादित करें", delete: "हटाएँ", fee: "शुल्क", students: "विद्यार्थी", children: "मॉड्यूल", root: "मुख्य पाठ्यक्रम", none: "निर्धारित नहीं", loading: "लोड हो रहा है…", empty: "इन फ़िल्टर से कोई पाठ्यक्रम नहीं मिला।", noHistory: "इस पाठ्यक्रम के लिए कोई गतिविधि दर्ज नहीं है।", deleted: "पाठ्यक्रम हटाया गया।", saved: "पाठ्यक्रम सहेजा गया।", loaded: "पाठ्यक्रम डेटा रीफ़्रेश किया गया।", needLogin: "साइन इन विफल। अपनी जानकारी जाँचें।", confirmDelete: "क्या आप यह पाठ्यक्रम हटाना चाहते हैं? यह पूर्ववत नहीं किया जा सकता।", deleteChildren: "हटाने से पहले सभी मॉड्यूल को स्थानांतरित या हटाएँ।", loadError: "पाठ्यक्रम लोड नहीं हुए। API सर्वर या सत्र जाँचें।", loginRequired: "सत्र समाप्त हो गया। कृपया फिर साइन इन करें।", parentSelf: "पाठ्यक्रम स्वयं का मुख्य पाठ्यक्रम नहीं हो सकता।" }
+        };
+        translations.en.portalAccess = "EduTrack portal";
+        translations.en.portalSignIn = "Sign in to EduTrack";
+        translations.en.portalSignInHint = "Use your portal account to continue.";
+        translations.hi.portalAccess = "EduTrack पोर्टल";
+        translations.hi.portalSignIn = "EduTrack में साइन इन करें";
+        translations.hi.portalSignInHint = "जारी रखने के लिए अपने पोर्टल खाते का उपयोग करें।";
+        let language = localStorage.getItem("edu-language") || "en";
+        let token = sessionStorage.getItem("edu-token") || "";
+        let currentRole = sessionStorage.getItem("edu-role") || "";
+        let currentStudentId = sessionStorage.getItem("edu-student-id") || "";
+        let courses = [];
+        let selectedId = "";
+        let noticeTimer;
+
+        const additionalTranslations = {
+            en: { navOverview: "Overview", navCourses: "Courses", navStudents: "Students", navBatches: "Batches", navAttendance: "Attendance", navEnrollments: "Enrollments", navPayments: "Payments", navReports: "Reports", overviewHeading: "Portal overview", overviewHint: "Current records across the student portal.", studentsHint: "Manage student profiles and batch assignments.", batchesHint: "Manage course cohorts, trainers, and capacity.", attendanceHint: "Record and correct attendance for batch-assigned students.", enrollmentsHint: "Manage student course registrations and progress.", paymentsHint: "Inspect Razorpay orders and fee collection; signatures are never shown.", reportsHint: "Review course enrollment, scores, attendance, and pass rate.", addStudent: "+ Add student", addBatch: "+ Add batch", addAttendance: "+ Record attendance", addEnrollment: "+ Enroll student", student: "Student", mobile: "Mobile", batchName: "Batch name", trainer: "Trainer", dates: "Dates", date: "Date", progress: "Progress", attendance: "Attendance", feeStatus: "Fee status", amount: "Amount", order: "Order", payment: "Payment", method: "Method", verifiedPayments: "Verified payments", collectedFees: "Fees collected", studentName: "Student name", email: "Email", course: "Course", batch: "Batch", status: "Status", save: "Save", selectStudent: "Select student", selectCourse: "Select course", noBatch: "No batch", startDate: "Start date", endDate: "End date", present: "Present", absent: "Absent", late: "Late", excused: "Excused", enrolled: "Enrolled", completed: "Completed", cancelled: "Cancelled", edit: "Edit", delete: "Delete", cancel: "Cancel", noRecords: "No records found.", loadFailed: "Could not load this section.", confirmDeleteRecord: "Delete this record? This cannot be undone.", saveSuccess: "Changes saved.", deleteSuccess: "Record deleted.", enrollmentSuccess: "Student enrolled.", reportLoading: "Loading report…", reportError: "Could not load report.", selectReportCourse: "Select a course to load its report.", averageScore: "Average score", attendanceRate: "Attendance rate", passRate: "Pass rate", enrollmentCount: "Enrollments", capacity: "Capacity", fee: "Fee", noCourse: "Course unavailable", noStudent: "Student unavailable", paymentDate: "Payment date", recordCreated: "Created", statusUpdated: "Status updated", cancelEnrollmentConfirm: "Cancel this enrollment?" },
+            hi: { navOverview: "अवलोकन", navCourses: "पाठ्यक्रम", navStudents: "विद्यार्थी", navBatches: "बैच", navAttendance: "उपस्थिति", navEnrollments: "नामांकन", navPayments: "भुगतान", navReports: "रिपोर्ट", overviewHeading: "पोर्टल अवलोकन", overviewHint: "विद्यार्थी पोर्टल के वर्तमान रिकॉर्ड।", studentsHint: "विद्यार्थी प्रोफ़ाइल और बैच असाइनमेंट प्रबंधित करें।", batchesHint: "कोर्स समूह, प्रशिक्षक और क्षमता प्रबंधित करें।", attendanceHint: "बैच में जुड़े विद्यार्थियों की उपस्थिति दर्ज और संशोधित करें।", enrollmentsHint: "कोर्स पंजीकरण और प्रगति प्रबंधित करें।", paymentsHint: "Razorpay ऑर्डर और शुल्क संग्रह देखें; हस्ताक्षर नहीं दिखाए जाते।", reportsHint: "नामांकन, अंक, उपस्थिति और उत्तीर्ण दर देखें।", addStudent: "+ विद्यार्थी जोड़ें", addBatch: "+ बैच जोड़ें", addAttendance: "+ उपस्थिति दर्ज करें", addEnrollment: "+ विद्यार्थी नामांकित करें", student: "विद्यार्थी", mobile: "मोबाइल", batchName: "बैच का नाम", trainer: "प्रशिक्षक", dates: "तिथियाँ", date: "तिथि", progress: "प्रगति", attendance: "उपस्थिति", feeStatus: "शुल्क स्थिति", amount: "राशि", order: "ऑर्डर", payment: "भुगतान", method: "माध्यम", verifiedPayments: "सत्यापित भुगतान", collectedFees: "एकत्र शुल्क", studentName: "विद्यार्थी का नाम", email: "ईमेल", course: "पाठ्यक्रम", batch: "बैच", status: "स्थिति", save: "सहेजें", selectStudent: "विद्यार्थी चुनें", selectCourse: "पाठ्यक्रम चुनें", noBatch: "कोई बैच नहीं", startDate: "आरंभ तिथि", endDate: "समाप्ति तिथि", present: "उपस्थित", absent: "अनुपस्थित", late: "विलंब", excused: "अनुमति प्राप्त", enrolled: "नामांकित", completed: "पूर्ण", cancelled: "रद्द", edit: "संपादित करें", delete: "हटाएँ", cancel: "रद्द करें", noRecords: "कोई रिकॉर्ड नहीं मिला।", loadFailed: "यह अनुभाग लोड नहीं हो सका।", confirmDeleteRecord: "यह रिकॉर्ड हटाएँ? इसे पूर्ववत नहीं किया जा सकता।", saveSuccess: "बदलाव सहेजे गए।", deleteSuccess: "रिकॉर्ड हटाया गया।", enrollmentSuccess: "विद्यार्थी नामांकित हुआ।", reportLoading: "रिपोर्ट लोड हो रही है…", reportError: "रिपोर्ट लोड नहीं हो सकी।", selectReportCourse: "रिपोर्ट देखने के लिए पाठ्यक्रम चुनें।", averageScore: "औसत अंक", attendanceRate: "उपस्थिति दर", passRate: "उत्तीर्ण दर", enrollmentCount: "नामांकन", capacity: "क्षमता", fee: "शुल्क", noCourse: "पाठ्यक्रम उपलब्ध नहीं", noStudent: "विद्यार्थी उपलब्ध नहीं", paymentDate: "भुगतान तिथि", recordCreated: "बनाया गया", statusUpdated: "स्थिति बदली गई", cancelEnrollmentConfirm: "यह नामांकन रद्द करें?" }
+        };
+        additionalTranslations.en.studentWelcome = "Student dashboard";
+        additionalTranslations.en.studentWorkspace = "Student workspace";
+        additionalTranslations.en.studentCourses = "My courses";
+        additionalTranslations.en.studentFees = "Course fees";
+        additionalTranslations.en.totalDue = "Amount due";
+        additionalTranslations.en.paidAmount = "Paid";
+        additionalTranslations.en.pendingAmount = "Due";
+        additionalTranslations.en.attendanceRate = "Attendance";
+        additionalTranslations.en.noStudentLink = "This student account is not linked to a student profile.";
+        additionalTranslations.en.accessDenied = "Your account does not have permission to view this section.";
+        additionalTranslations.en.workingDays = "Working days";
+        additionalTranslations.en.daysPresent = "Days present";
+        additionalTranslations.en.daysAbsent = "Days absent";
+        additionalTranslations.en.downloadReport = "Download report";
+        additionalTranslations.en.downloadMarksheet = "Download marksheet";
+        additionalTranslations.en.studentAcademicRecords = "Marks and backlogs";
+        additionalTranslations.en.paymentHistory = "Payment history";
+        additionalTranslations.en.subject = "Subject";
+        additionalTranslations.en.examination = "Examination";
+        additionalTranslations.en.marks = "Marks";
+        additionalTranslations.en.result = "Result";
+        additionalTranslations.en.updated = "Updated";
+        additionalTranslations.en.instructorDashboard = "Instructor dashboard";
+        additionalTranslations.en.assignedStudents = "Assigned students";
+        additionalTranslations.en.assignedStudentsHint = "Students assigned to your batches.";
+        additionalTranslations.en.academicRecords = "Academic records";
+        additionalTranslations.en.academicRecordsHint = "Record subject-wise exam results and backlog history.";
+        additionalTranslations.en.addResult = "Add result";
+        additionalTranslations.en.noAssignedStudents = "No students are assigned to your batches yet.";
+        additionalTranslations.en.paymentPendingVerification = "Payment submitted; awaiting gateway verification.";
+        additionalTranslations.en.paymentVerified = "Payment verified successfully.";
+        additionalTranslations.en.paymentFailed = "Payment did not complete. Check the payment history and retry if needed.";
+        additionalTranslations.en.checkoutCancelled = "Checkout closed. Your payment remains pending until verified.";
+        additionalTranslations.en.studentProfileMissing = "Linked student profile is unavailable.";
+        additionalTranslations.en.view = "View";
+        additionalTranslations.en.attempt = "Attempt";
+        additionalTranslations.en.paymentStatus = "Payment status";
+        additionalTranslations.en.trainerUsername = "Trainer login username";
+        additionalTranslations.en.tuition = "Tuition";
+        additionalTranslations.en.sportsFees = "Sports and extracurricular fees";
+        additionalTranslations.en.examinationFees = "Examination fees";
+        additionalTranslations.en.otherCharges = "Other charges";
+        additionalTranslations.en.discount = "Discount";
+        additionalTranslations.en.feeBreakdown = "Fee breakdown";
+        additionalTranslations.en.payExactDue = "Pay outstanding balance";
+        additionalTranslations.en.downloadReceipt = "Download receipt";
+        additionalTranslations.en.editFees = "Edit fees";
+        additionalTranslations.en.maximumMarks = "Maximum marks";
+        additionalTranslations.en.hallTickets = "Hall tickets";
+        additionalTranslations.en.hallTicketsHint = "Issue examination tickets for enrolled students.";
+        additionalTranslations.en.issueHallTicket = "Issue hall ticket";
+        additionalTranslations.en.startTime = "Start time";
+        additionalTranslations.en.venue = "Venue";
+        additionalTranslations.en.seatNumber = "Seat number";
+        additionalTranslations.en.instructions = "Instructions";
+        additionalTranslations.en.downloadTicket = "Download PDF";
+        additionalTranslations.en.studentAccountRole = "Account role";
+        additionalTranslations.hi.trainerUsername = "प्रशिक्षक लॉगिन उपयोगकर्ता नाम";
+        additionalTranslations.hi.tuition = "ट्यूशन शुल्क";
+        additionalTranslations.hi.sportsFees = "खेल और सह-पाठ्यक्रम शुल्क";
+        additionalTranslations.hi.examinationFees = "परीक्षा शुल्क";
+        additionalTranslations.hi.otherCharges = "अन्य शुल्क";
+        additionalTranslations.hi.discount = "छूट";
+        additionalTranslations.hi.feeBreakdown = "शुल्क विवरण";
+        additionalTranslations.hi.payExactDue = "बकाया राशि का भुगतान करें";
+        additionalTranslations.hi.downloadReceipt = "रसीद डाउनलोड करें";
+        additionalTranslations.hi.editFees = "शुल्क संपादित करें";
+        additionalTranslations.hi.maximumMarks = "अधिकतम अंक";
+        additionalTranslations.hi.hallTickets = "प्रवेश पत्र";
+        additionalTranslations.hi.hallTicketsHint = "नामांकित विद्यार्थियों के लिए परीक्षा प्रवेश पत्र जारी करें।";
+        additionalTranslations.hi.issueHallTicket = "प्रवेश पत्र जारी करें";
+        additionalTranslations.hi.startTime = "आरंभ समय";
+        additionalTranslations.hi.venue = "स्थान";
+        additionalTranslations.hi.seatNumber = "सीट नंबर";
+        additionalTranslations.hi.instructions = "निर्देश";
+        additionalTranslations.hi.downloadTicket = "PDF डाउनलोड करें";
+        additionalTranslations.hi.studentAccountRole = "खाता भूमिका";
+        additionalTranslations.hi.workingDays = "कार्य दिवस";
+        additionalTranslations.hi.daysPresent = "उपस्थित दिन";
+        additionalTranslations.hi.daysAbsent = "अनुपस्थित दिन";
+        additionalTranslations.hi.downloadReport = "रिपोर्ट डाउनलोड करें";
+        additionalTranslations.hi.downloadMarksheet = "अंकपत्र डाउनलोड करें";
+        additionalTranslations.hi.studentAcademicRecords = "अंक और बैकलॉग";
+        additionalTranslations.hi.paymentHistory = "भुगतान इतिहास";
+        additionalTranslations.hi.subject = "विषय";
+        additionalTranslations.hi.examination = "परीक्षा";
+        additionalTranslations.hi.marks = "अंक";
+        additionalTranslations.hi.result = "परिणाम";
+        additionalTranslations.hi.updated = "अपडेट किया गया";
+        additionalTranslations.hi.instructorDashboard = "प्रशिक्षक डैशबोर्ड";
+        additionalTranslations.hi.assignedStudents = "निर्धारित विद्यार्थी";
+        additionalTranslations.hi.assignedStudentsHint = "आपके बैचों में निर्धारित विद्यार्थी।";
+        additionalTranslations.hi.academicRecords = "शैक्षणिक रिकॉर्ड";
+        additionalTranslations.hi.academicRecordsHint = "विषयवार परीक्षा परिणाम और बैकलॉग इतिहास दर्ज करें।";
+        additionalTranslations.hi.addResult = "परिणाम जोड़ें";
+        additionalTranslations.hi.noAssignedStudents = "अभी आपके बैचों में कोई विद्यार्थी निर्धारित नहीं है।";
+        additionalTranslations.hi.paymentPendingVerification = "भुगतान भेजा गया; गेटवे सत्यापन की प्रतीक्षा है।";
+        additionalTranslations.hi.paymentVerified = "भुगतान सफलतापूर्वक सत्यापित हुआ।";
+        additionalTranslations.hi.paymentFailed = "भुगतान पूरा नहीं हुआ। भुगतान इतिहास जाँचें और आवश्यकता हो तो पुनः प्रयास करें।";
+        additionalTranslations.hi.checkoutCancelled = "चेकआउट बंद हुआ। सत्यापन तक भुगतान लंबित रहेगा।";
+        additionalTranslations.hi.studentProfileMissing = "जुड़ी हुई विद्यार्थी प्रोफ़ाइल उपलब्ध नहीं है।";
+        additionalTranslations.hi.view = "देखें";
+        additionalTranslations.hi.attempt = "प्रयास";
+        additionalTranslations.hi.paymentStatus = "भुगतान स्थिति";
+        additionalTranslations.hi.studentWelcome = "विद्यार्थी डैशबोर्ड";
+        additionalTranslations.hi.studentWorkspace = "विद्यार्थी कार्यक्षेत्र";
+        additionalTranslations.hi.studentCourses = "मेरे पाठ्यक्रम";
+        additionalTranslations.hi.studentFees = "पाठ्यक्रम शुल्क";
+        additionalTranslations.hi.totalDue = "देय राशि";
+        additionalTranslations.hi.paidAmount = "जमा";
+        additionalTranslations.hi.pendingAmount = "बाकी";
+        additionalTranslations.hi.attendanceRate = "उपस्थिति";
+        additionalTranslations.hi.noStudentLink = "यह विद्यार्थी खाता किसी विद्यार्थी प्रोफ़ाइल से जुड़ा नहीं है।";
+        additionalTranslations.hi.accessDenied = "आपके खाते को यह अनुभाग देखने की अनुमति नहीं है।";
+        additionalTranslations.en.feeBalances = "Course fee balances";
+        additionalTranslations.en.feeBalancesHint = "Verified payments only count toward collected fees.";
+        additionalTranslations.en.enrolledStudents = "Enrolled students";
+        additionalTranslations.en.totalDue = "Total due";
+        additionalTranslations.en.pendingFees = "Pending";
+        additionalTranslations.en.navUsers = "Accounts";
+        additionalTranslations.en.usersHint = "Create and remove portal accounts. Passwords are never displayed.";
+        additionalTranslations.en.addUser = "+ Add account";
+        additionalTranslations.en.role = "Role";
+        additionalTranslations.en.linkedStudent = "Student link";
+        additionalTranslations.hi.navUsers = "खाते";
+        additionalTranslations.hi.usersHint = "पोर्टल खाते बनाएँ और हटाएँ। पासवर्ड कभी नहीं दिखाए जाते।";
+        additionalTranslations.hi.addUser = "+ खाता जोड़ें";
+        additionalTranslations.hi.role = "भूमिका";
+        additionalTranslations.hi.linkedStudent = "जुड़ा विद्यार्थी";
+        additionalTranslations.hi.feeBalances = "पाठ्यक्रम शुल्क शेष";
+        additionalTranslations.hi.feeBalancesHint = "केवल सत्यापित भुगतान संग्रह में गिने जाते हैं।";
+        additionalTranslations.hi.enrolledStudents = "नामांकित विद्यार्थी";
+        additionalTranslations.hi.totalDue = "कुल देय";
+        additionalTranslations.hi.pendingFees = "शेष राशि";
+
+        const t = key => (translations[language] || translations.en)[key] || additionalTranslations[language]?.[key] || additionalTranslations.en[key] || key;
+        const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+        const flatten = (nodes, depth = 0, output = []) => { for (const node of nodes || []) { output.push({ ...node, depth }); flatten(node.children, depth + 1, output); } return output; };
+        const allRows = () => flatten(courses);
+        const selectedCourse = () => allRows().find(course => course.id === selectedId);
+        const request = async (path, options = {}) => {
+            const response = await fetch(API + path, { ...options, headers: { ...(options.body ? { "Content-Type": "application/json" } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(options.headers || {}) } });
+            if (response.status === 401) { if (token) { token = ""; currentRole = ""; currentStudentId = ""; sessionStorage.removeItem("edu-token"); sessionStorage.removeItem("edu-role"); sessionStorage.removeItem("edu-student-id"); showLogin(); throw new Error(t("loginRequired")); } }
+            if (response.status === 403) throw new Error(t("accessDenied"));
+            if (!response.ok) { let detail = ""; try { const body = await response.json(); detail = body.message || body.error || ""; } catch { } throw new Error(detail || `Request failed (${response.status})`); }
+            if (response.status === 204) return null;
+            const text = await response.text(); return text ? JSON.parse(text) : null;
+        };
+        function showNotice(message, error = false) { const box = document.getElementById("notice"); box.textContent = message; box.classList.toggle("error", error); box.classList.remove("hidden"); clearTimeout(noticeTimer); noticeTimer = setTimeout(() => box.classList.add("hidden"), 3600); }
+        function applyTranslations() {
+            document.documentElement.lang = language;
+            document.querySelectorAll("[data-i18n]").forEach(element => { const value = t(element.dataset.i18n); if (element.tagName === "OPTION") element.textContent = value; else element.textContent = value; });
+            document.querySelectorAll("[data-i18n-placeholder]").forEach(element => element.placeholder = t(element.dataset.i18nPlaceholder));
+            document.getElementById("language").value = language;
+            document.getElementById("loginLanguage").value = language;
+            if (currentRole === "STUDENT" || currentRole === "INSTRUCTOR") {
+                document.getElementById("brandCaption").textContent = t(currentRole === "STUDENT" ? "studentWorkspace" : "instructorDashboard");
+            }
+            renderCourses(); renderSelection();
+        }
+        function showLogin() {
+            document.getElementById("app").classList.add("hidden");
+            document.getElementById("loginScreen").classList.remove("hidden");
+            document.getElementById("studentWorkspace").classList.add("hidden");
+            document.getElementById("instructorWorkspace").classList.add("hidden");
+            document.querySelector(".section-nav").classList.remove("hidden");
+            document.querySelector("main").classList.remove("hidden");
+        }
+        function showApp() { document.getElementById("loginScreen").classList.add("hidden"); document.getElementById("app").classList.remove("hidden"); }
+        async function loadCourses(announce = false) {
+            document.getElementById("courseList").innerHTML = `<div class="empty">${escapeHtml(t("loading"))}</div>`;
+            try { courses = await request("/courses/hierarchy"); if (!allRows().some(course => course.id === selectedId)) selectedId = ""; updateMetrics(); renderCourses(); renderSelection(); if (announce) showNotice(t("loaded")); }
+            catch (error) { document.getElementById("courseList").innerHTML = `<div class="empty">${escapeHtml(error.message || t("loadError"))}</div>`; }
+        }
+        function updateMetrics() {
+            const rows = allRows();
+            document.getElementById("totalCount").textContent = rows.length;
+            document.getElementById("activeCount").textContent = rows.filter(course => ["OPEN", "ACTIVE"].includes((course.status || "").toUpperCase())).length;
+            document.getElementById("rootCount").textContent = courses.length;
+            document.getElementById("childCount").textContent = rows.filter(course => course.depth > 0).length;
+        }
+        function renderCourses() {
+            const query = document.getElementById("search").value.trim().toLocaleLowerCase();
+            const status = document.getElementById("statusFilter").value;
+            const rows = allRows().filter(course => (!status || (course.status || "").toUpperCase() === status) && (!query || `${course.courseName} ${course.instructorName || ""}`.toLocaleLowerCase().includes(query)));
+            const list = document.getElementById("courseList");
+            if (!rows.length) { list.innerHTML = `<div class="empty">${escapeHtml(t("empty"))}</div>`; return; }
+            list.innerHTML = rows.map(course => `<div class="course-row ${course.id === selectedId ? "selected" : ""}" data-id="${escapeHtml(course.id)}" role="button" tabindex="0" aria-label="${escapeHtml(course.courseName)}">
+        <div class="course-main" style="padding-left:${Math.min(course.depth * 22, 132)}px">${course.depth ? '<span class="tree-branch"></span>' : ""}<div style="min-width:0"><div class="course-title">${escapeHtml(course.courseName)}</div><div class="course-subtitle">${escapeHtml(course.duration || "")} · ₹${Number(course.fees || 0).toLocaleString("en-IN")}</div></div></div>
+        <span><span class="badge ${(course.status || "").toLowerCase()}">${escapeHtml(course.status || "DRAFT")}</span></span>
+        <span class="course-subtitle">${escapeHtml(course.instructorName || t("none"))}</span>
+        <span class="row-count">${Number(course.enrolledStudents || 0)} / ${course.capacity == null ? "∞" : Number(course.capacity)}</span></div>`).join("");
+            list.querySelectorAll(".course-row").forEach(row => {
+                row.addEventListener("click", () => selectCourse(row.dataset.id));
+                row.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectCourse(row.dataset.id); } });
+            });
+        }
+        async function selectCourse(id) { selectedId = id; renderCourses(); await renderSelection(); }
+        async function renderSelection() {
+            const course = selectedCourse();
+            const details = document.getElementById("selectedDetails");
+            const auditList = document.getElementById("auditList");
+            if (!course) { details.innerHTML = `<div class="empty">${escapeHtml(t("noCourseSelected"))}</div>`; auditList.innerHTML = `<div class="empty">${escapeHtml(t("selectForHistory"))}</div>`; document.getElementById("auditCount").textContent = "0"; return; }
+            const flat = allRows();
+            const parent = flat.find(item => item.id === course.parentCourseId);
+            const description = course.descriptionTranslations?.[language] || course.descriptionTranslations?.[language === "hi" ? "hi-IN" : "en"] || course.description || "";
+            const childCount = flat.filter(item => item.parentCourseId === course.id).length;
+            details.innerHTML = `<h3>${escapeHtml(course.courseName)}</h3><div class="detail-grid"><span>${escapeHtml(t("status"))}</span><strong>${escapeHtml(course.status || "DRAFT")}</strong><span>${escapeHtml(t("instructor"))}</span><strong>${escapeHtml(course.instructorName || t("none"))}</strong><span>${escapeHtml(t("parentCourse"))}</span><strong>${escapeHtml(parent?.courseName || t("root"))}</strong><span>${escapeHtml(t("fee"))}</span><strong>₹${Number(course.fees || 0).toLocaleString("en-IN")}</strong><span>${escapeHtml(t("students"))}</span><strong>${Number(course.enrolledStudents || 0)} / ${course.capacity == null ? "∞" : Number(course.capacity)}</strong><span>${escapeHtml(t("children"))}</span><strong>${childCount}</strong></div><p class="course-subtitle" style="margin-top:14px;white-space:normal">${escapeHtml(description)}</p><div style="display:flex;gap:8px;margin-top:14px"><button id="editSelected" class="secondary">${escapeHtml(t("edit"))}</button><button id="deleteSelected" class="danger">${escapeHtml(t("delete"))}</button></div>`;
+            document.getElementById("editSelected").addEventListener("click", () => openEditor(course));
+            document.getElementById("deleteSelected").addEventListener("click", () => deleteCourse(course));
+            try {
+                const history = await request(`/courses/${encodeURIComponent(course.id)}/audit`);
+                document.getElementById("auditCount").textContent = history.length;
+                auditList.innerHTML = history.length ? history.map(event => `<div class="audit-item"><div class="audit-action">${escapeHtml(event.action.replaceAll("_", " "))}</div><div class="audit-meta">${escapeHtml(event.actor)} · ${escapeHtml(event.occurredAt ? new Date(event.occurredAt).toLocaleString(language === "hi" ? "hi-IN" : "en-IN") : "")}<br>${escapeHtml(event.details || "")}</div></div>`).join("") : `<div class="empty">${escapeHtml(t("noHistory"))}</div>`;
+            } catch (error) { auditList.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`; }
+        }
+        function openEditor(course = null) {
+            const form = document.getElementById("courseForm"); form.reset();
+            document.getElementById("courseId").value = course?.id || "";
+            document.getElementById("dialogTitle").textContent = course ? t("edit") : t("newCourse").replace(/^\+\s*/, "");
+            const parent = document.getElementById("parentCourse");
+            parent.innerHTML = `<option value="">${escapeHtml(t("noParent"))}</option>` + allRows().filter(item => item.id !== course?.id).map(item => `<option value="${escapeHtml(item.id)}">${"— ".repeat(Math.min(item.depth, 5))}${escapeHtml(item.courseName)}</option>`).join("");
+            if (course) {
+                document.getElementById("courseName").value = course.courseName || "";
+                parent.value = course.parentCourseId || "";
+                document.getElementById("duration").value = course.duration || "";
+                document.getElementById("fees").value = course.fees ?? "";
+                document.getElementById("statusInput").value = course.status || "DRAFT";
+                document.getElementById("instructor").value = course.instructorName || "";
+                document.getElementById("capacity").value = course.capacity ?? "";
+                document.getElementById("startDate").value = course.startDate || "";
+                document.getElementById("endDate").value = course.endDate || "";
+                document.getElementById("descriptionEn").value = course.descriptionTranslations?.en || course.description || "";
+                document.getElementById("descriptionHi").value = course.descriptionTranslations?.hi || "";
+            } else { document.getElementById("statusInput").value = "DRAFT"; }
+            document.getElementById("courseDialog").showModal();
+        }
+        async function deleteCourse(course) {
+            if (allRows().some(item => item.parentCourseId === course.id)) { showNotice(t("deleteChildren"), true); return; }
+            if (!confirm(t("confirmDelete"))) return;
+            try { await request(`/courses/${encodeURIComponent(course.id)}`, { method: "DELETE" }); selectedId = ""; await loadCourses(); showNotice(t("deleted")); }
+            catch (error) { showNotice(error.message, true); }
+        }
+        document.getElementById("loginForm").addEventListener("submit", async event => {
+            event.preventDefault();
+            try {
+                const response = await fetch(`${API}/users/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: document.getElementById("username").value, password: document.getElementById("password").value }) });
+                if (!response.ok) throw new Error(t("needLogin"));
+                const result = await response.json();
+                const role = String(result.role || "").toUpperCase();
+                if (!["ADMIN", "STUDENT", "INSTRUCTOR"].includes(role)) throw new Error(t("needLogin"));
+                if (role === "STUDENT" && !result.studentId) throw new Error(t("noStudentLink"));
+                token = result.token;
+                currentRole = role;
+                currentStudentId = result.studentId || "";
+                sessionStorage.setItem("edu-token", token);
+                sessionStorage.setItem("edu-role", currentRole);
+                if (currentStudentId) sessionStorage.setItem("edu-student-id", currentStudentId);
+                else sessionStorage.removeItem("edu-student-id");
+                showApp();
+            }
+            catch (error) { showNotice(error.message || t("needLogin"), true); }
+        });
+        document.getElementById("courseForm").addEventListener("submit", async event => {
+            event.preventDefault();
+            const id = document.getElementById("courseId").value;
+            const payload = { courseName: document.getElementById("courseName").value.trim(), parentCourseId: document.getElementById("parentCourse").value || null, duration: document.getElementById("duration").value.trim(), fees: Number(document.getElementById("fees").value), description: document.getElementById("descriptionEn").value.trim(), descriptionTranslations: { en: document.getElementById("descriptionEn").value.trim(), hi: document.getElementById("descriptionHi").value.trim() }, status: document.getElementById("statusInput").value, instructorName: document.getElementById("instructor").value.trim() || null, capacity: document.getElementById("capacity").value ? Number(document.getElementById("capacity").value) : null, startDate: document.getElementById("startDate").value || null, endDate: document.getElementById("endDate").value || null };
+            if (id && payload.parentCourseId === id) { showNotice(t("parentSelf"), true); return; }
+            try { const result = await request(id ? `/courses/${encodeURIComponent(id)}` : "/courses", { method: id ? "PUT" : "POST", body: JSON.stringify(payload) }); selectedId = result.id; document.getElementById("courseDialog").close(); await loadCourses(); showNotice(t("saved")); }
+            catch (error) { showNotice(error.message, true); }
+        });
+        document.getElementById("newCourseButton").addEventListener("click", () => openEditor());
+        document.getElementById("closeDialog").addEventListener("click", () => document.getElementById("courseDialog").close());
+        document.getElementById("cancelDialog").addEventListener("click", () => document.getElementById("courseDialog").close());
+        document.getElementById("search").addEventListener("input", renderCourses);
+        document.getElementById("statusFilter").addEventListener("change", renderCourses);
+        document.getElementById("refreshButton").addEventListener("click", () => loadCourses(true));
+        document.getElementById("language").addEventListener("change", event => { language = event.target.value; localStorage.setItem("edu-language", language); applyTranslations(); });
+        document.getElementById("loginLanguage").addEventListener("change", event => { language = event.target.value; localStorage.setItem("edu-language", language); applyTranslations(); });
+        document.getElementById("logoutButton").addEventListener("click", () => {
+            token = "";
+            currentRole = "";
+            currentStudentId = "";
+            sessionStorage.removeItem("edu-token");
+            sessionStorage.removeItem("edu-role");
+            sessionStorage.removeItem("edu-student-id");
+            showLogin();
+        });
+        applyTranslations();
+    </script>
+    <script>
+        let adminData = { students: [], users: [], batches: [], attendance: [], enrollments: [], payments: [], fees: [], academicRecords: [], hallTickets: [] };
+        let activeAdminView = "overview";
+        let activeRecordType = "";
+        let editingRecordId = "";
+        let studentDashboardData = { student: null, enrollments: [], attendance: [], fees: [], payments: [], records: [], hallTickets: [], performance: null, courses: [] };
+        let instructorDashboardData = { students: [], selectedStudentId: "", attendance: [], records: [], enrollments: [] };
+
+        function courseName(id) { return allRows().find(course => course.id === id)?.courseName || t("noCourse"); }
+        function studentName(id) { return adminData.students.find(student => student.id === id)?.name || t("noStudent"); }
+        function batchName(id) { return adminData.batches.find(batch => batch.id === id)?.batchName || "—"; }
+        function money(value) { return `₹${Number(value || 0).toLocaleString(language === "hi" ? "hi-IN" : "en-IN")}`; }
+        function showEmpty(tableId, columnCount) { document.getElementById(tableId).innerHTML = `<tr><td colspan="${columnCount}" class="empty">${escapeHtml(t("noRecords"))}</td></tr>`; }
+        function actionButtons(type, id, editable = true) {
+            return `<div class="table-actions">${editable ? `<button class="secondary" data-edit="${escapeHtml(type)}" data-id="${escapeHtml(id)}">${escapeHtml(t("edit"))}</button>` : ""}<button class="danger" data-delete="${escapeHtml(type)}" data-id="${escapeHtml(id)}">${escapeHtml(t("delete"))}</button></div>`;
+        }
+        function setTable(tableId, rows, columnCount) {
+            document.getElementById(tableId).innerHTML = rows.length ? rows.join("") : `<tr><td colspan="${columnCount}" class="empty">${escapeHtml(t("noRecords"))}</td></tr>`;
+        }
+        function renderStudentDashboard() {
+            const data = studentDashboardData;
+            const student = data.student;
+            document.getElementById("studentProfile").textContent = student
+                ? `${student.name} · ${student.email}`
+                : "";
+            document.getElementById("studentAcademicProfile").textContent = student
+                ? [student.courseName, student.batchName, student.trainerName, student.instructorName,
+                    student.lastUpdatedAt ? `${t("updated")}: ${new Date(student.lastUpdatedAt).toLocaleString(language === "hi" ? "hi-IN" : "en-IN")}` : ""]
+                    .filter(Boolean).join(" · ")
+                : t("studentProfileMissing");
+            const courseById = new Map(data.courses.map(course => [course.id, course]));
+            const enrollments = data.enrollments;
+            const attendance = data.attendance.slice().sort((left, right) => String(right.date || "").localeCompare(String(left.date || "")));
+            const feeTotal = data.fees.reduce((total, fee) => total + Number(fee.pendingAmount || 0), 0);
+            const totalMarks = data.records.reduce((sum, record) => sum + Number(record.marksObtained || 0), 0);
+            const maximumMarks = data.records.reduce((sum, record) => sum + Number(record.maximumMarks || 0), 0);
+            const average = maximumMarks > 0 ? totalMarks * 100 / maximumMarks : null;
+            const presentCount = attendance.filter(record => String(record.status || "").toUpperCase() === "PRESENT").length;
+            const absentCount = attendance.filter(record => String(record.status || "").toUpperCase() === "ABSENT").length;
+            const attendanceRate = attendance.length
+                ? presentCount * 100 / attendance.length
+                : data.performance?.attendancePercentage ?? null;
+
+            document.getElementById("studentCourseCount").textContent = enrollments.filter(enrollment => String(enrollment.status || "").toUpperCase() !== "CANCELLED").length;
+            document.getElementById("studentAttendanceRate").textContent = attendanceRate == null ? "—" : `${Number(attendanceRate).toFixed(1)}%`;
+            document.getElementById("studentAverageScore").textContent = average == null ? "—" : `${Number(average).toFixed(1)}%`;
+            document.getElementById("studentAmountDue").textContent = money(feeTotal);
+            document.getElementById("studentWorkingDays").textContent = attendance.length;
+            document.getElementById("studentDaysPresent").textContent = presentCount;
+            document.getElementById("studentDaysAbsent").textContent = absentCount;
+            document.getElementById("studentAttendanceChart").innerHTML = `<div class="chart-row"><span>${escapeHtml(t("present"))}</span><div class="chart-track"><div class="chart-bar" style="width:${attendanceRate || 0}%"></div></div><strong>${attendanceRate == null ? "0" : attendanceRate.toFixed(1)}%</strong></div><p class="course-subtitle">${escapeHtml(t("daysPresent"))}: ${presentCount} · ${escapeHtml(t("daysAbsent"))}: ${absentCount}</p>`;
+
+            setTable("studentCoursesTable", enrollments.map(enrollment => {
+                const course = courseById.get(enrollment.courseId);
+                const records = data.records.filter(record => record.courseId === enrollment.courseId);
+                const marks = records.reduce((sum, record) => sum + Number(record.marksObtained || 0), 0);
+                const maximum = records.reduce((sum, record) => sum + Number(record.maximumMarks || 0), 0);
+                const score = maximum > 0 ? `${(marks * 100 / maximum).toFixed(1)}%` : "—";
+                const enrollmentAttendance = data.student?.courseId === enrollment.courseId && attendanceRate != null
+                    ? Number(attendanceRate)
+                    : Number(enrollment.attendancePercentage || 0);
+                return `<tr><td><strong>${escapeHtml(course?.courseName || `${t("course")} ${enrollment.courseId}`)}</strong></td><td><span class="badge ${(enrollment.status || "").toLowerCase()}">${escapeHtml(enrollment.status || "—")}</span></td><td>${Number(enrollment.progress || 0)}%</td><td>${enrollmentAttendance.toFixed(1)}%</td><td>${score}</td></tr>`;
+            }), 5);
+            setTable("studentAttendanceTable", attendance.map(record =>
+                `<tr><td>${escapeHtml(record.date || "—")}</td><td><span class="badge ${(record.status || "").toLowerCase()}">${escapeHtml(record.status || "—")}</span></td></tr>`
+            ), 2);
+            setTable("studentAcademicTable", data.records.map(record => {
+                const course = courseById.get(record.courseId);
+                const subject = courseById.get(record.subjectId);
+                return `<tr><td>${escapeHtml(course?.courseName || t("noCourse"))}</td><td>${escapeHtml(subject?.courseName || record.subjectId)}</td><td>${escapeHtml(record.examination)}</td><td>${Number(record.attemptNumber || 1)}</td><td>${Number(record.marksObtained)} / ${Number(record.maximumMarks)}</td><td><span class="badge ${record.passed ? "verified" : "failed"}">${record.passed ? "PASS" : "BACKLOG"}</span></td><td>${escapeHtml(record.updatedAt ? new Date(record.updatedAt).toLocaleDateString(language === "hi" ? "hi-IN" : "en-IN") : "—")}</td></tr>`;
+            }), 7);
+            setTable("studentFeesTable", data.fees.map(fee => {
+                const lineItems = [
+                    [t("tuition"), fee.tuitionFee],
+                    ...Object.entries(fee.subjectFees || {}),
+                    [t("sportsFees"), fee.sportsFee],
+                    [t("examinationFees"), fee.examinationFee],
+                    [t("otherCharges"), fee.otherCharges],
+                    [t("discount"), -Number(fee.discount || 0)]
+                ].map(([label, amount]) => `<div>${escapeHtml(label)}: ${money(amount)}</div>`).join("");
+                const isPayable = data.enrollments.some(enrollment =>
+                    enrollment.courseId === fee.courseId && String(enrollment.status || "").toUpperCase() !== "CANCELLED");
+                const paymentButton = isPayable && Number(fee.pendingAmount) > 0
+                    ? `<button class="primary" data-pay-course="${escapeHtml(fee.courseId)}">${escapeHtml(t("payExactDue"))}</button>`
+                    : "";
+                return `<tr><td>${escapeHtml(fee.courseName || t("noCourse"))}<details><summary>${escapeHtml(t("feeBreakdown"))}</summary>${lineItems}<strong>${escapeHtml(t("totalDue"))}: ${money(fee.totalFee)}</strong></details></td><td>${money(fee.totalFee)}</td><td>${money(fee.paidAmount)}</td><td>${money(fee.pendingAmount)}</td><td><span class="badge ${(fee.paymentStatus || "").toLowerCase()}">${escapeHtml(fee.paymentStatus || "—")}</span> ${paymentButton}</td></tr>`;
+            }), 5);
+            setTable("studentPaymentsTable", data.payments.map(payment => {
+                const course = courseById.get(payment.courseId);
+                const receipt = String(payment.status || "").toUpperCase() === "VERIFIED"
+                    ? `<button class="secondary" data-download-receipt="${escapeHtml(payment.id)}">${escapeHtml(t("downloadReceipt"))}</button>`
+                    : "";
+                return `<tr><td>${escapeHtml(course?.courseName || t("noCourse"))}</td><td>${money(payment.amount)}</td><td><span class="badge ${(payment.status || "").toLowerCase()}">${escapeHtml(payment.status || "PENDING")}</span></td><td>${escapeHtml(payment.paymentDate || payment.createdAt || "—")}</td><td>${receipt}</td></tr>`;
+            }), 5);
+            setTable("studentHallTicketsTable", data.hallTickets.map(ticket => `<tr><td>${escapeHtml(ticket.courseName || courseById.get(ticket.courseId)?.courseName || t("noCourse"))}</td><td>${escapeHtml(ticket.examination)}</td><td>${escapeHtml(ticket.examDate)}</td><td>${escapeHtml(ticket.startTime)}</td><td>${escapeHtml(ticket.venue)}</td><td>${escapeHtml(ticket.seatNumber)}</td><td><button class="secondary" data-download-hall-ticket="${escapeHtml(ticket.id)}">${escapeHtml(t("downloadTicket"))}</button></td></tr>`), 7);
+        }
+        async function loadStudentData() {
+            const studentId = encodeURIComponent(currentStudentId);
+            const endpoints = [
+                `/students/${studentId}`,
+                "/courses",
+                `/enrollments/student/${studentId}`,
+                `/attendance/student/${studentId}`,
+                `/payments/students/${studentId}/summary`,
+                `/reports/performance/student/${studentId}`,
+                `/academic-records/student/${studentId}`,
+                `/payments/students/${studentId}/history`,
+                `/hall-tickets/student/${studentId}`
+            ];
+            const results = await Promise.allSettled(endpoints.map(endpoint => request(endpoint)));
+            courses = results[1].status === "fulfilled" ? results[1].value : [];
+            studentDashboardData = {
+                student: results[0].status === "fulfilled" ? results[0].value : null,
+                courses: results[1].status === "fulfilled" ? results[1].value : [],
+                enrollments: results[2].status === "fulfilled" ? results[2].value : [],
+                attendance: results[3].status === "fulfilled" ? results[3].value : [],
+                fees: results[4].status === "fulfilled" ? results[4].value : [],
+                performance: results[5].status === "fulfilled" ? results[5].value : null,
+                records: results[6].status === "fulfilled" ? results[6].value : [],
+                payments: results[7].status === "fulfilled" ? results[7].value : [],
+                hallTickets: results[8].status === "fulfilled" ? results[8].value : []
+            };
+            renderStudentDashboard();
+            for (let index = 0; index < results.length; index++) {
+                if (results[index].status === "rejected" && index !== 5) {
+                    showNotice(`${endpoints[index]}: ${results[index].reason.message}`, true);
+                }
+            }
+        }
+        async function downloadAuthenticatedFile(path, fallbackName) {
+            const response = await fetch(API + path, { headers: { Authorization: "Bearer " + token } });
+            if (response.status === 401) {
+                token = "";
+                currentRole = "";
+                currentStudentId = "";
+                sessionStorage.removeItem("edu-token");
+                sessionStorage.removeItem("edu-role");
+                sessionStorage.removeItem("edu-student-id");
+                showLogin();
+                throw new Error(t("loginRequired"));
+            }
+            if (!response.ok) {
+                let message = t("loadFailed");
+                try { const body = await response.json(); message = body.message || body.error || message; } catch { }
+                throw new Error(message);
+            }
+            const blob = await response.blob();
+            const disposition = response.headers.get("Content-Disposition") || "";
+            const name = disposition.match(/filename="?([^";]+)"?/i)?.[1] || fallbackName;
+            const link = document.createElement("a");
+            const objectUrl = URL.createObjectURL(blob);
+            link.href = objectUrl;
+            link.download = name;
+            link.click();
+            URL.revokeObjectURL(objectUrl);
+        }
+        async function beginStudentPayment(courseId) {
+            try {
+                const order = await request("/payments/create-order", {
+                    method: "POST",
+                    body: JSON.stringify({ courseId })
+                });
+                if (typeof window.Razorpay !== "function") throw new Error("Razorpay Checkout could not be loaded. Please retry.");
+                const checkout = new window.Razorpay({
+                    key: order.keyId,
+                    amount: Math.round(Number(order.amount) * 100),
+                    currency: "INR",
+                    name: "EduTrack",
+                    description: `${t("studentFees")} · ${courseName(courseId)}`,
+                    order_id: order.orderId,
+                    handler: async gatewayResult => {
+                        try {
+                            await request("/payments/verify", {
+                                method: "POST",
+                                body: JSON.stringify({
+                                    orderId: gatewayResult.razorpay_order_id,
+                                    paymentId: gatewayResult.razorpay_payment_id,
+                                    signature: gatewayResult.razorpay_signature
+                                })
+                            });
+                            showNotice(t("paymentVerified"));
+                            await loadStudentData();
+                        } catch (error) {
+                            showNotice(`${t("paymentPendingVerification")} ${error.message}`, true);
+                            await loadStudentData();
+                        }
+                    },
+                    modal: { ondismiss: () => showNotice(t("checkoutCancelled")) },
+                    theme: { color: "#08765d" }
+                });
+                checkout.on("payment.failed", () => showNotice(t("paymentFailed"), true));
+                checkout.open();
+            } catch (error) {
+                showNotice(error.message, true);
+            }
+        }
+        async function loadInstructorData() {
+            try {
+                const [students, courseList] = await Promise.all([
+                    request("/instructors/me/students"),
+                    request("/courses")
+                ]);
+                instructorDashboardData.students = students;
+                courses = courseList;
+                renderInstructorDashboard();
+                if (!students.some(student => student.id === instructorDashboardData.selectedStudentId)) {
+                    instructorDashboardData.selectedStudentId = "";
+                    document.getElementById("instructorStudentHeading").textContent = t("selectStudent");
+                    showEmpty("instructorAttendanceTable", 3);
+                    showEmpty("instructorAcademicTable", 6);
+                    document.getElementById("instructorAddAttendance").disabled = true;
+                    document.getElementById("instructorAddMark").disabled = true;
+                } else await selectInstructorStudent(instructorDashboardData.selectedStudentId);
+            } catch (error) {
+                showNotice(error.message, true);
+            }
+        }
+        function renderInstructorDashboard() {
+            const rows = instructorDashboardData.students.map(student =>
+                `<tr><td>${escapeHtml(student.name)}</td><td>${escapeHtml(student.courseName || t("noCourse"))}</td><td>${escapeHtml(student.batchName || "—")}</td><td><button class="secondary" data-instructor-student="${escapeHtml(student.id)}">${escapeHtml(t("view"))}</button></td></tr>`
+            );
+            setTable("instructorStudentsTable", rows, 4);
+        }
+        async function selectInstructorStudent(studentId) {
+            const student = instructorDashboardData.students.find(item => item.id === studentId);
+            if (!student) return;
+            instructorDashboardData.selectedStudentId = studentId;
+            document.getElementById("instructorStudentHeading").textContent = student.name;
+            document.getElementById("instructorStudentMeta").textContent =
+                [student.courseName, student.batchName, student.trainerName, student.instructorName].filter(Boolean).join(" · ");
+            document.getElementById("instructorAddAttendance").disabled = false;
+            document.getElementById("instructorAddMark").disabled = false;
+            const id = encodeURIComponent(studentId);
+            const [attendance, records] = await Promise.all([
+                request(`/attendance/student/${id}`),
+                request(`/academic-records/student/${id}`)
+            ]);
+            instructorDashboardData.attendance = attendance;
+            instructorDashboardData.records = records;
+            renderInstructorRecords();
+        }
+        function renderInstructorRecords() {
+            setTable("instructorAttendanceTable", instructorDashboardData.attendance.map(record =>
+                `<tr><td>${escapeHtml(record.date)}</td><td><span class="badge ${(record.status || "").toLowerCase()}">${escapeHtml(record.status)}</span></td><td><button class="secondary" data-instructor-edit-attendance="${escapeHtml(record.id)}">${escapeHtml(t("edit"))}</button></td></tr>`
+            ), 3);
+            setTable("instructorAcademicTable", instructorDashboardData.records.map(record =>
+                `<tr><td>${escapeHtml(courseName(record.courseId))}</td><td>${escapeHtml(courseName(record.subjectId))}</td><td>${escapeHtml(record.examination)}</td><td>${Number(record.attemptNumber || 1)}</td><td>${Number(record.marksObtained)} / ${Number(record.maximumMarks)}</td><td><span class="badge ${record.passed ? "verified" : "failed"}">${record.passed ? "PASS" : "BACKLOG"}</span> <button class="secondary" data-instructor-edit-record="${escapeHtml(record.id)}">${escapeHtml(t("edit"))}</button></td></tr>`
+            ), 6);
+        }
+        let instructorRecordType = "";
+        let instructorEditingRecordId = "";
+        function openInstructorDialog(type, record = null) {
+            instructorRecordType = type;
+            instructorEditingRecordId = record?.id || "";
+            const student = instructorDashboardData.students.find(item => item.id === instructorDashboardData.selectedStudentId);
+            if (!student) return;
+            const fields = document.getElementById("instructorFields");
+            document.getElementById("instructorDialogTitle").textContent = t(type === "attendance" ? "addAttendance" : "addResult");
+            const studentField = `<input type="hidden" name="studentId" value="${escapeHtml(student.id)}">`;
+            if (type === "attendance") {
+                fields.innerHTML = studentField +
+                    recordField(t("date"), "date", record?.date || new Date().toISOString().slice(0, 10), "date", true) +
+                    recordSelect(t("status"), "status", ["PRESENT", "ABSENT", "LATE", "EXCUSED"].map(status => `<option ${record?.status === status ? "selected" : ""}>${status}</option>`).join(""), record?.status || "PRESENT");
+            } else {
+                const courseId = record?.courseId || student.courseId || "";
+                const subjects = allRows().filter(course => course.id === courseId || course.parentCourseId === courseId);
+                fields.innerHTML = studentField +
+                    recordSelect(t("course"), "courseId", selectOptions(allRows(), "id", "courseName", courseId), courseId) +
+                    recordSelect(t("subject"), "subjectId", selectOptions(subjects, "id", "courseName", record?.subjectId || ""), record?.subjectId || "") +
+                    recordField(t("examination"), "examination", record?.examination || "", "text", true) +
+                    recordField(t("attempt"), "attemptNumber", record?.attemptNumber ?? 1, "number", true, 'min="1" step="1"') +
+                    recordField(t("marks"), "marksObtained", record?.marksObtained ?? "", "number", true, 'min="0" step="0.01"') +
+                    recordField(t("maximumMarks"), "maximumMarks", record?.maximumMarks ?? 100, "number", true, 'min="0.01" step="0.01"');
+                document.getElementById("instructorFields").querySelector('[name="courseId"]').addEventListener("change", event => {
+                    const nextSubjects = allRows().filter(course => course.id === event.target.value || course.parentCourseId === event.target.value);
+                    document.getElementById("instructorFields").querySelector('[name="subjectId"]').innerHTML = selectOptions(nextSubjects, "id", "courseName");
+                });
+            }
+            document.getElementById("instructorDialog").showModal();
+        }
+        function renderAdminData() {
+            const flatCourses = allRows();
+            setTable("studentsTable", adminData.students.map(student => `<tr><td><strong>${escapeHtml(student.name)}</strong></td><td>${escapeHtml(student.email)}</td><td>${escapeHtml(student.mobile || "—")}</td><td>${escapeHtml(batchName(student.batchId))}</td><td>${money(student.fees)}</td><td>${actionButtons("students", student.id)}</td></tr>`), 6);
+            setTable("usersTable", adminData.users.map(user => `<tr><td><strong>${escapeHtml(user.username)}</strong></td><td>${escapeHtml(user.email)}</td><td><span class="badge ${(user.role || "").toLowerCase()}">${escapeHtml(user.role)}</span></td><td>${escapeHtml(studentName(user.studentId))}</td><td>${actionButtons("users", user.id, false)}</td></tr>`), 5);
+            setTable("batchesTable", adminData.batches.map(batch => `<tr><td><strong>${escapeHtml(batch.batchName)}</strong></td><td>${escapeHtml(courseName(batch.courseId))}</td><td>${escapeHtml(batch.trainerName)}</td><td>${escapeHtml(batch.startDate || "—")} – ${escapeHtml(batch.endDate || "—")}</td><td>${Number(batch.capacity || 0)} · ${adminData.students.filter(student => student.batchId === batch.id).length}</td><td><span class="badge ${(batch.status || "").toLowerCase()}">${escapeHtml(batch.status)}</span></td><td>${actionButtons("batches", batch.id)}</td></tr>`), 7);
+            setTable("attendanceTable", adminData.attendance.map(item => {
+                const student = adminData.students.find(entry => entry.id === item.studentId);
+                const batch = adminData.batches.find(entry => entry.id === student?.batchId);
+                return `<tr><td>${escapeHtml(studentName(item.studentId))}</td><td>${escapeHtml(courseName(batch?.courseId))}</td><td>${escapeHtml(item.date || "—")}</td><td><span class="badge ${(item.status || "").toLowerCase()}">${escapeHtml(item.status || "—")}</span></td><td>${actionButtons("attendance", item.id)}</td></tr>`;
+            }), 5);
+            setTable("enrollmentsTable", adminData.enrollments.map(enrollment => `<tr><td>${escapeHtml(studentName(enrollment.studentId))}</td><td>${escapeHtml(courseName(enrollment.courseId))}</td><td><span class="badge ${(enrollment.status || "").toLowerCase()}">${escapeHtml(enrollment.status || "—")}</span></td><td>${Number(enrollment.progress || 0)}%</td><td>${Number(enrollment.attendancePercentage || 0)}%</td><td>${escapeHtml(enrollment.feeStatus || "PENDING")}</td><td><div class="table-actions"><select aria-label="${escapeHtml(t("statusUpdated"))}" data-enrollment-status="${escapeHtml(enrollment.id)}"><option value="ENROLLED" ${enrollment.status === "ENROLLED" ? "selected" : ""}>ENROLLED</option><option value="COMPLETED" ${enrollment.status === "COMPLETED" ? "selected" : ""}>COMPLETED</option><option value="CANCELLED" ${enrollment.status === "CANCELLED" ? "selected" : ""}>CANCELLED</option></select><button class="secondary" data-enrollment-fees="${escapeHtml(enrollment.id)}">${escapeHtml(t("editFees"))}</button><button class="danger" data-cancel-enrollment="${escapeHtml(enrollment.id)}">${escapeHtml(t("cancel"))}</button></div></td></tr>`), 7);
+            setTable("paymentsTable", adminData.payments.map(payment => `<tr><td>${escapeHtml(studentName(payment.studentId))}</td><td>${escapeHtml(courseName(payment.courseId))}</td><td>${money(payment.amount)}</td><td>${escapeHtml(payment.orderId || "—")}</td><td>${escapeHtml(payment.paymentId || "—")}</td><td>${escapeHtml(payment.paymentMethod || "—")}</td><td><span class="badge ${(payment.status || "").toLowerCase()}">${escapeHtml(payment.status || "—")}</span></td><td>${escapeHtml(payment.paymentDate || payment.createdAt || "—")}</td><td>${String(payment.status || "").toUpperCase() === "VERIFIED" ? `<button class="secondary" data-download-receipt="${escapeHtml(payment.id)}">${escapeHtml(t("downloadReceipt"))}</button>` : ""}</td></tr>`), 9);
+            setTable("academicRecordsTable", adminData.academicRecords.map(record => `<tr><td>${escapeHtml(studentName(record.studentId))}</td><td>${escapeHtml(courseName(record.courseId))}</td><td>${escapeHtml(courseName(record.subjectId))}</td><td>${escapeHtml(record.examination)}</td><td>${Number(record.attemptNumber || 1)}</td><td>${Number(record.marksObtained)} / ${Number(record.maximumMarks)}</td><td><span class="badge ${record.passed ? "verified" : "failed"}">${record.passed ? "PASS" : "BACKLOG"}</span></td><td>${actionButtons("academicRecords", record.id)}</td></tr>`), 8);
+            setTable("hallTicketsTable", adminData.hallTickets.map(ticket =>
+                `<tr><td>${escapeHtml(ticket.studentName || studentName(ticket.studentId))}</td><td>${escapeHtml(ticket.courseName || courseName(ticket.courseId))}</td><td>${escapeHtml(ticket.examination)}</td><td>${escapeHtml(ticket.examDate)}</td><td>${escapeHtml(ticket.startTime)}</td><td>${escapeHtml(ticket.venue)}</td><td>${escapeHtml(ticket.seatNumber)}</td><td>${actionButtons("hallTickets", ticket.id)}</td></tr>`
+            ), 8);
+            const activeEnrollments = adminData.enrollments.filter(enrollment => (enrollment.status || "").toUpperCase() !== "CANCELLED");
+            const feeRows = flatCourses.map(course => {
+                const enrolledCount = activeEnrollments.filter(enrollment => enrollment.courseId === course.id).length;
+                const courseFees = adminData.fees.filter(fee => fee.courseId === course.id);
+                const totalDue = courseFees.reduce((sum, fee) => sum + Number(fee.totalFee || 0), 0);
+                const collected = courseFees.reduce((sum, fee) => sum + Number(fee.paidAmount || 0), 0);
+                return `<tr><td>${escapeHtml(course.courseName)}</td><td>${enrolledCount}</td><td>${money(totalDue)}</td><td>${money(collected)}</td><td>${money(Math.max(0, totalDue - collected))}</td></tr>`;
+            });
+            setTable("feeBalancesTable", feeRows, 5);
+            const verifiedPayments = adminData.payments.filter(payment => (payment.status || "").toUpperCase() === "VERIFIED");
+            document.getElementById("overviewCourses").textContent = flatCourses.length;
+            document.getElementById("overviewStudents").textContent = adminData.students.length;
+            document.getElementById("overviewUsers").textContent = adminData.users.length;
+            document.getElementById("overviewBatches").textContent = adminData.batches.length;
+            document.getElementById("overviewAttendance").textContent = adminData.attendance.length;
+            document.getElementById("overviewEnrollments").textContent = adminData.enrollments.length;
+            document.getElementById("overviewPayments").textContent = adminData.payments.length;
+            document.getElementById("overviewVerified").textContent = verifiedPayments.length;
+            document.getElementById("overviewCollected").textContent = money(verifiedPayments.reduce((total, payment) => total + Number(payment.amount || 0), 0));
+            renderReportCourseOptions();
+        }
+        async function loadAdminData() {
+            const endpoints = ["/courses/hierarchy", "/students", "/batches", "/attendance", "/payments", "/users", "/academic-records", "/hall-tickets"];
+            const results = await Promise.allSettled(endpoints.map(endpoint => request(endpoint)));
+            if (results[0].status === "fulfilled") courses = results[0].value;
+            if (results[1].status === "fulfilled") adminData.students = results[1].value;
+            if (results[2].status === "fulfilled") adminData.batches = results[2].value;
+            if (results[3].status === "fulfilled") adminData.attendance = results[3].value;
+            if (results[4].status === "fulfilled") adminData.payments = results[4].value;
+            if (results[5].status === "fulfilled") adminData.users = results[5].value;
+            if (results[6].status === "fulfilled") adminData.academicRecords = results[6].value;
+            if (results[7].status === "fulfilled") adminData.hallTickets = results[7].value;
+            const enrollmentResults = await Promise.allSettled(adminData.students.map(student => request(`/enrollments/student/${encodeURIComponent(student.id)}`)));
+            adminData.enrollments = enrollmentResults.flatMap(result => result.status === "fulfilled" ? result.value : []);
+            const feeResults = await Promise.allSettled(adminData.students.map(student => request(`/payments/students/${encodeURIComponent(student.id)}/summary`)));
+            adminData.fees = feeResults.flatMap(result => result.status === "fulfilled" ? result.value : []);
+            renderAdminData();
+            renderCourses();
+            renderSelection();
+            for (let index = 0; index < results.length; index++) {
+                if (results[index].status === "rejected") showNotice(`${endpoints[index]}: ${results[index].reason.message}`, true);
+            }
+        }
+        function switchAdminView(view) {
+            activeAdminView = view;
+            document.querySelectorAll(".section-tab").forEach(tab => tab.classList.toggle("active", tab.dataset.view === view));
+            document.querySelectorAll(".course-only").forEach(element => element.classList.toggle("hidden", view !== "courses"));
+            document.querySelectorAll(".admin-view").forEach(element => element.classList.toggle("hidden", element.id !== `${view}View`));
+            if (view === "reports") loadCourseReport();
+        }
+        function selectOptions(items, idKey, labelKey, selected = "", includeBlank = false, blankLabel = "") {
+            const blank = includeBlank ? `<option value="">${escapeHtml(blankLabel)}</option>` : `<option value="">${escapeHtml(t("selectCourse"))}</option>`;
+            return blank + items.map(item => `<option value="${escapeHtml(item[idKey])}" ${item[idKey] === selected ? "selected" : ""}>${escapeHtml(item[labelKey])}</option>`).join("");
+        }
+        function recordField(label, name, value = "", type = "text", required = false, extra = "") {
+            return `<div class="field"><label for="record-${name}">${escapeHtml(label)}</label><input id="record-${name}" name="${name}" type="${type}" value="${escapeHtml(value)}" ${required ? "required" : ""} ${extra}></div>`;
+        }
+        function recordSelect(label, name, options, selected = "", required = true) {
+            return `<div class="field"><label for="record-${name}">${escapeHtml(label)}</label><select id="record-${name}" name="${name}" ${required ? "required" : ""}>${options}</select></div>`;
+        }
+        function openRecordDialog(type, record = null) {
+            activeRecordType = type;
+            editingRecordId = record?.id || "";
+            const fields = document.getElementById("recordFields");
+            const typeLabel = type === "students" ? "navStudents" : type === "batches" ? "navBatches" : type === "attendance" ? "navAttendance" : type === "academicRecords" ? "academicRecords" : type === "hallTickets" ? "hallTickets" : "navEnrollments";
+            const typeTitle = type === "hallTickets" ? "issueHallTicket" : type === "students" ? "addStudent" : type === "batches" ? "addBatch" : type === "attendance" ? "addAttendance" : type === "academicRecords" ? "addResult" : "addEnrollment";
+            const titleText = record ? `${t("edit")} · ${t(typeLabel)}` : t(typeTitle).replace(/^\+\s*/, "");
+            document.getElementById("recordTitle").textContent = titleText;
+            if (type === "students") {
+                fields.innerHTML = recordField(t("studentName"), "name", record?.name || "", "text", true) + recordField(t("email"), "email", record?.email || "", "email", true) + recordField(t("mobile"), "mobile", record?.mobile || "") + recordField(t("fee"), "fees", record?.fees ?? 0, "number", false, 'min="0" step="0.01"') + recordSelect(t("batch"), "batchId", selectOptions(adminData.batches, "id", "batchName", record?.batchId || "", true, t("noBatch")), record?.batchId || "", false);
+            } else if (type === "batches") {
+                const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+                fields.innerHTML = recordField(t("batchName"), "batchName", record?.batchName || "", "text", true) + recordSelect(t("course"), "courseId", selectOptions(allRows(), "id", "courseName", record?.courseId || ""), record?.courseId || "") + recordField(t("trainer"), "trainerName", record?.trainerName || "", "text", true) + recordField(t("trainerUsername"), "trainerUsername", record?.trainerUsername || "") + recordField(t("startDate"), "startDate", record?.startDate || new Date().toISOString().slice(0, 10), "date", true) + recordField(t("endDate"), "endDate", record?.endDate || tomorrow, "date", true) + recordField(t("capacity"), "capacity", record?.capacity || 30, "number", true, 'min="1"') + recordSelect(t("status"), "status", ["ACTIVE", "UPCOMING", "COMPLETED", "CANCELLED"].map(status => `<option ${record?.status === status ? "selected" : ""}>${status}</option>`).join(""), record?.status || "ACTIVE");
+            } else if (type === "attendance") {
+                const assignedStudents = adminData.students.filter(student => student.batchId);
+                fields.innerHTML = recordSelect(t("student"), "studentId", selectOptions(assignedStudents, "id", "name", record?.studentId || ""), record?.studentId || "") + recordField(t("date"), "date", record?.date || new Date().toISOString().slice(0, 10), "date", true) + recordSelect(t("status"), "status", ["PRESENT", "ABSENT", "LATE", "EXCUSED"].map(status => `<option ${record?.status === status ? "selected" : ""}>${status}</option>`).join(""), record?.status || "PRESENT");
+            } else if (type === "users") {
+                fields.innerHTML = recordField(t("username"), "username", "", "text", true) + recordField(t("email"), "email", "", "email", true) + recordField(t("password"), "password", "", "password", true) + recordSelect(t("role"), "role", `<option value="ADMIN">ADMIN</option><option value="STUDENT">STUDENT</option><option value="INSTRUCTOR">INSTRUCTOR</option>`, "ADMIN") + recordSelect(t("linkedStudent"), "studentId", selectOptions(adminData.students, "id", "name", "", true, t("none")), "", false);
+            } else if (type === "academicRecords") {
+                const selectedCourse = record?.courseId || "";
+                const subjects = allRows().filter(course => course.id === selectedCourse || course.parentCourseId === selectedCourse);
+                fields.innerHTML = recordSelect(t("student"), "studentId", selectOptions(adminData.students, "id", "name", record?.studentId || ""), record?.studentId || "") + recordSelect(t("course"), "courseId", selectOptions(allRows(), "id", "courseName", selectedCourse), selectedCourse) + recordSelect(t("subject"), "subjectId", selectOptions(subjects, "id", "courseName", record?.subjectId || ""), record?.subjectId || "") + recordField(t("examination"), "examination", record?.examination || "", "text", true) + recordField(t("attempt"), "attemptNumber", record?.attemptNumber ?? 1, "number", true, 'min="1" step="1"') + recordField(t("marks"), "marksObtained", record?.marksObtained ?? "", "number", true, 'min="0" step="0.01"') + recordField(t("maximumMarks"), "maximumMarks", record?.maximumMarks ?? 100, "number", true, 'min="0.01" step="0.01"');
+                document.getElementById("record-courseId").addEventListener("change", event => {
+                    const courseId = event.target.value;
+                    const nextSubjects = allRows().filter(course => course.id === courseId || course.parentCourseId === courseId);
+                    document.getElementById("record-subjectId").innerHTML = selectOptions(nextSubjects, "id", "courseName");
+                });
+            } else if (type === "hallTickets") {
+                const studentId = record?.studentId || "";
+                const enrolledCourseIds = new Set(adminData.enrollments
+                    .filter(enrollment => enrollment.studentId === studentId && String(enrollment.status || "").toUpperCase() !== "CANCELLED")
+                    .map(enrollment => enrollment.courseId));
+                const enrolledCourses = allRows().filter(course => enrolledCourseIds.has(course.id));
+                fields.innerHTML =
+                    recordSelect(t("student"), "studentId", selectOptions(adminData.students, "id", "name", studentId, true, t("selectStudent")), studentId) +
+                    recordSelect(t("course"), "courseId", selectOptions(enrolledCourses, "id", "courseName", record?.courseId || ""), record?.courseId || "") +
+                    recordField(t("examination"), "examination", record?.examination || "", "text", true) +
+                    recordField(t("date"), "examDate", record?.examDate || "", "date", true) +
+                    recordField(t("startTime"), "startTime", record?.startTime || "", "time", true) +
+                    recordField(t("venue"), "venue", record?.venue || "", "text", true) +
+                    recordField(t("seatNumber"), "seatNumber", record?.seatNumber || "", "text", true) +
+                    recordField(t("instructions"), "instructions", record?.instructions || "");
+                document.getElementById("record-studentId").addEventListener("change", event => {
+                    const nextEnrollments = adminData.enrollments.filter(enrollment =>
+                        enrollment.studentId === event.target.value && String(enrollment.status || "").toUpperCase() !== "CANCELLED");
+                    const nextCourses = allRows().filter(course => nextEnrollments.some(enrollment => enrollment.courseId === course.id));
+                    document.getElementById("record-courseId").innerHTML = selectOptions(nextCourses, "id", "courseName");
+                });
+            } else {
+                fields.innerHTML = recordSelect(t("student"), "studentId", selectOptions(adminData.students, "id", "name"), "") + recordSelect(t("course"), "courseId", selectOptions(allRows(), "id", "courseName"), "");
+            }
+            document.getElementById("recordDialog").showModal();
+        }
+        function openFeeEditor(enrollmentId) {
+            const enrollment = adminData.enrollments.find(item => item.id === enrollmentId);
+            if (!enrollment) return;
+            activeRecordType = "fees";
+            editingRecordId = enrollmentId;
+            document.getElementById("recordTitle").textContent = `${t("editFees")} · ${escapeHtml(studentName(enrollment.studentId))} · ${escapeHtml(courseName(enrollment.courseId))}`;
+            document.getElementById("recordFields").innerHTML =
+                recordField(t("sportsFees"), "sportsFee", enrollment.sportsFee || 0, "number", true, 'min="0" step="0.01"') +
+                recordField(t("examinationFees"), "examinationFee", enrollment.examinationFee || 0, "number", true, 'min="0" step="0.01"') +
+                recordField(t("otherCharges"), "otherCharges", enrollment.otherCharges || 0, "number", true, 'min="0" step="0.01"') +
+                recordField(t("discount"), "discount", enrollment.discount || 0, "number", true, 'min="0" step="0.01"');
+            document.getElementById("recordDialog").showModal();
+        }
+        async function saveRecord(event) {
+            event.preventDefault();
+            const values = Object.fromEntries(new FormData(event.currentTarget).entries());
+            let path = "";
+            let method = editingRecordId ? "PUT" : "POST";
+            let body = values;
+            if (activeRecordType === "enrollments") {
+                path = `/enrollments?studentId=${encodeURIComponent(values.studentId)}&courseId=${encodeURIComponent(values.courseId)}`;
+                method = "POST";
+                body = undefined;
+            } else if (activeRecordType === "fees") {
+                path = `/enrollments/${encodeURIComponent(editingRecordId)}/fees`;
+                method = "PUT";
+                for (const key of ["sportsFee", "examinationFee", "otherCharges", "discount"]) body[key] = Number(body[key]);
+            } else {
+                const endpoint = activeRecordType === "academicRecords" ? "academic-records"
+                    : activeRecordType === "hallTickets" ? "hall-tickets" : activeRecordType;
+                path = `/${endpoint}${editingRecordId ? `/${encodeURIComponent(editingRecordId)}` : ""}`;
+                if (activeRecordType === "students") body.fees = Number(body.fees || 0);
+                if (activeRecordType === "batches") body.capacity = Number(body.capacity);
+                if (activeRecordType === "academicRecords") {
+                    body.attemptNumber = Number(body.attemptNumber);
+                    body.marksObtained = Number(body.marksObtained);
+                    body.maximumMarks = Number(body.maximumMarks);
+                }
+                if (activeRecordType === "users" && body.role === "STUDENT" && !body.studentId) { showNotice(t("linkedStudent"), true); return; }
+                if (activeRecordType === "users" && !body.studentId) delete body.studentId;
+            }
+            try {
+                await request(path, { method, body: body ? JSON.stringify(body) : undefined });
+                document.getElementById("recordDialog").close();
+                await loadAdminData();
+                showNotice(activeRecordType === "enrollments" ? t("enrollmentSuccess") : t("saveSuccess"));
+            } catch (error) { showNotice(error.message, true); }
+        }
+        async function deleteRecord(type, id) {
+            if (!confirm(t("confirmDeleteRecord"))) return;
+            try {
+                const endpoint = type === "academicRecords" ? "academic-records"
+                    : type === "hallTickets" ? "hall-tickets" : type;
+                await request(`/${endpoint}/${encodeURIComponent(id)}`, { method: "DELETE" });
+                await loadAdminData();
+                showNotice(t("deleteSuccess"));
+            } catch (error) { showNotice(error.message, true); }
+        }
+        async function updateEnrollmentStatus(id, status) {
+            try { await request(`/enrollments/${encodeURIComponent(id)}/status?status=${encodeURIComponent(status)}`, { method: "PUT" }); await loadAdminData(); showNotice(t("statusUpdated")); }
+            catch (error) { showNotice(error.message, true); }
+        }
+        async function cancelEnrollment(id) {
+            if (!confirm(t("cancelEnrollmentConfirm"))) return;
+            try { await request(`/enrollments/${encodeURIComponent(id)}`, { method: "DELETE" }); await loadAdminData(); showNotice(t("statusUpdated")); }
+            catch (error) { showNotice(error.message, true); }
+        }
+        function renderReportCourseOptions() {
+            const select = document.getElementById("reportCourse");
+            if (!select) return;
+            const selected = select.value;
+            select.innerHTML = `<option value="">${escapeHtml(t("selectCourse"))}</option>` + allRows().map(course => `<option value="${escapeHtml(course.id)}">${escapeHtml(course.courseName)}</option>`).join("");
+            if (allRows().some(course => course.id === selected)) select.value = selected;
+        }
+        async function loadCourseReport() {
+            const courseId = document.getElementById("reportCourse").value;
+            const content = document.getElementById("reportContent");
+            if (!courseId) { content.innerHTML = `<div class="empty">${escapeHtml(t("selectReportCourse"))}</div>`; return; }
+            content.innerHTML = `<div class="empty">${escapeHtml(t("reportLoading"))}</div>`;
+            try {
+                const report = await request(`/reports/performance/course/${encodeURIComponent(courseId)}`);
+                const chart = (report.chartData || []).map(point => `<div class="chart-row"><span>${escapeHtml(point.label)}</span><div class="chart-track"><div class="chart-bar" style="width:${Math.max(0, Math.min(100, Number(point.value) || 0))}%"></div></div><strong>${Number(point.value || 0).toFixed(0)}%</strong></div>`).join("");
+                content.innerHTML = `<div class="report-stats"><div class="report-stat"><span>${escapeHtml(t("enrollmentCount"))}</span><strong>${Number(report.enrollmentCount || 0)}</strong></div><div class="report-stat"><span>${escapeHtml(t("averageScore"))}</span><strong>${Number(report.averageScore || 0).toFixed(1)}%</strong></div><div class="report-stat"><span>${escapeHtml(t("attendanceRate"))}</span><strong>${Number(report.attendancePercentage || 0).toFixed(1)}%</strong></div><div class="report-stat"><span>${escapeHtml(t("passRate"))}</span><strong>${Number(report.passRate || 0).toFixed(1)}%</strong></div></div><div>${chart || `<div class="empty">${escapeHtml(t("noRecords"))}</div>`}</div>`;
+            } catch (error) { content.innerHTML = `<div class="empty">${escapeHtml(error.message || t("reportError"))}</div>`; }
+        }
+        function rerenderActiveView() {
+            if (currentRole === "STUDENT") renderStudentDashboard();
+            else if (currentRole === "INSTRUCTOR") renderInstructorDashboard();
+            else {
+                renderAdminData();
+                renderCourses();
+                if (activeAdminView === "reports") loadCourseReport();
+            }
+        }
+
+        document.querySelectorAll(".section-tab").forEach(tab => tab.addEventListener("click", () => switchAdminView(tab.dataset.view)));
+        document.querySelectorAll("[data-create]").forEach(button => button.addEventListener("click", () => openRecordDialog(button.dataset.create)));
+        document.querySelectorAll("[data-refresh-view]").forEach(button => button.addEventListener("click", () => loadAdminData()));
+        document.getElementById("recordForm").addEventListener("submit", saveRecord);
+        document.getElementById("recordClose").addEventListener("click", () => document.getElementById("recordDialog").close());
+        document.getElementById("recordCancel").addEventListener("click", () => document.getElementById("recordDialog").close());
+        document.getElementById("instructorDialogClose").addEventListener("click", () => document.getElementById("instructorDialog").close());
+        document.getElementById("instructorDialogCancel").addEventListener("click", () => document.getElementById("instructorDialog").close());
+        document.getElementById("instructorForm").addEventListener("submit", async event => {
+            event.preventDefault();
+            const values = Object.fromEntries(new FormData(event.currentTarget).entries());
+            let endpoint = "attendance";
+            if (instructorRecordType === "academicRecords") {
+                endpoint = "academic-records";
+                values.attemptNumber = Number(values.attemptNumber);
+                values.marksObtained = Number(values.marksObtained);
+                values.maximumMarks = Number(values.maximumMarks);
+            }
+            const path = instructorRecordType === "attendance"
+                ? `/attendance${instructorEditingRecordId ? `/${encodeURIComponent(instructorEditingRecordId)}` : ""}`
+                : `/${endpoint}${instructorEditingRecordId ? `/${encodeURIComponent(instructorEditingRecordId)}` : ""}`;
+            try {
+                await request(path, { method: instructorEditingRecordId ? "PUT" : "POST", body: JSON.stringify(values) });
+                document.getElementById("instructorDialog").close();
+                await selectInstructorStudent(instructorDashboardData.selectedStudentId);
+                showNotice(t("saveSuccess"));
+            } catch (error) { showNotice(error.message, true); }
+        });
+        document.getElementById("reportCourse").addEventListener("change", loadCourseReport);
+        document.getElementById("instructorAddAttendance").addEventListener("click", () => openInstructorDialog("attendance"));
+        document.getElementById("instructorAddMark").addEventListener("click", () => openInstructorDialog("academicRecords"));
+        document.getElementById("instructorRefreshButton").addEventListener("click", loadInstructorData);
+        document.getElementById("studentAttendanceDownload").addEventListener("click", async () => {
+            try { await downloadAuthenticatedFile(`/attendance/student/${encodeURIComponent(currentStudentId)}/report/pdf`, "attendance.pdf"); }
+            catch (error) { showNotice(error.message, true); }
+        });
+        document.getElementById("studentMarksheetDownload").addEventListener("click", async () => {
+            try { await downloadAuthenticatedFile(`/academic-records/student/${encodeURIComponent(currentStudentId)}/marksheet/pdf`, "marksheet.pdf"); }
+            catch (error) { showNotice(error.message, true); }
+        });
+        document.addEventListener("click", event => {
+            const edit = event.target.closest("[data-edit]");
+            const remove = event.target.closest("[data-delete]");
+            const cancel = event.target.closest("[data-cancel-enrollment]");
+            const feeEdit = event.target.closest("[data-enrollment-fees]");
+            const pay = event.target.closest("[data-pay-course]");
+            const receipt = event.target.closest("[data-download-receipt]");
+            const hallTicket = event.target.closest("[data-download-hall-ticket]");
+            const instructorStudent = event.target.closest("[data-instructor-student]");
+            const instructorAttendanceEdit = event.target.closest("[data-instructor-edit-attendance]");
+            const instructorRecordEdit = event.target.closest("[data-instructor-edit-record]");
+            if (edit) openRecordDialog(edit.dataset.edit, adminData[edit.dataset.edit].find(record => record.id === edit.dataset.id));
+            if (remove) deleteRecord(remove.dataset.delete, remove.dataset.id);
+            if (cancel) cancelEnrollment(cancel.dataset.cancelEnrollment);
+            if (feeEdit) openFeeEditor(feeEdit.dataset.enrollmentFees);
+            if (pay) beginStudentPayment(pay.dataset.payCourse);
+            if (receipt) downloadAuthenticatedFile(`/payments/${encodeURIComponent(receipt.dataset.downloadReceipt)}/receipt/pdf`, "receipt.pdf")
+                .catch(error => showNotice(error.message, true));
+            if (hallTicket) downloadAuthenticatedFile(`/hall-tickets/${encodeURIComponent(hallTicket.dataset.downloadHallTicket)}/pdf`, "hall-ticket.pdf")
+                .catch(error => showNotice(error.message, true));
+            if (instructorStudent) selectInstructorStudent(instructorStudent.dataset.instructorStudent)
+                .catch(error => showNotice(error.message, true));
+            if (instructorAttendanceEdit) {
+                const record = instructorDashboardData.attendance.find(item => item.id === instructorAttendanceEdit.dataset.instructorEditAttendance);
+                if (record) openInstructorDialog("attendance", record);
+            }
+            if (instructorRecordEdit) {
+                const record = instructorDashboardData.records.find(item => item.id === instructorRecordEdit.dataset.instructorEditRecord);
+                if (record) openInstructorDialog("academicRecords", record);
+            }
+        });
+        document.addEventListener("change", event => {
+            const status = event.target.closest("[data-enrollment-status]");
+            if (status) updateEnrollmentStatus(status.dataset.enrollmentStatus, status.value);
+        });
+        document.getElementById("language").addEventListener("change", rerenderActiveView);
+        document.getElementById("loginLanguage").addEventListener("change", rerenderActiveView);
+        document.getElementById("studentRefreshButton").addEventListener("click", loadStudentData);
+        const originalShowApp = showApp;
+        showApp = function () {
+            originalShowApp();
+            const isStudent = currentRole === "STUDENT";
+            const isInstructor = currentRole === "INSTRUCTOR";
+            document.querySelector(".section-nav").classList.toggle("hidden", isStudent || isInstructor);
+            document.querySelector("main").classList.toggle("hidden", isStudent || isInstructor);
+            document.getElementById("studentWorkspace").classList.toggle("hidden", !isStudent);
+            document.getElementById("instructorWorkspace").classList.toggle("hidden", !isInstructor);
+            document.getElementById("brandCaption").textContent = t(isStudent ? "studentWorkspace" : isInstructor ? "instructorDashboard" : "adminWorkspace");
+            if (isStudent) loadStudentData();
+            else if (isInstructor) loadInstructorData();
+            else loadAdminData();
+        };
+        switchAdminView("overview");
+        if (token && (!["ADMIN", "STUDENT", "INSTRUCTOR"].includes(currentRole) || (currentRole === "STUDENT" && !currentStudentId))) {
+            token = "";
+            currentRole = "";
+            currentStudentId = "";
+            sessionStorage.removeItem("edu-token");
+            sessionStorage.removeItem("edu-role");
+            sessionStorage.removeItem("edu-student-id");
+        } else if (token) {
+            showApp();
+        }
+        window.setInterval(() => {
+            if (token && currentRole === "ADMIN" && document.visibilityState === "visible") loadAdminData();
+            else if (token && currentRole === "STUDENT" && document.visibilityState === "visible") loadStudentData();
+            else if (token && currentRole === "INSTRUCTOR" && document.visibilityState === "visible") loadInstructorData();
+        }, 30000);
+    </script>
+</body>
+
+</html>
