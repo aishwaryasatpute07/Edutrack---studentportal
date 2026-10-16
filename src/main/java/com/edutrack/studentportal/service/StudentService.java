@@ -7,6 +7,7 @@ import com.edutrack.studentportal.model.Batch;
 import com.edutrack.studentportal.model.Student;
 import com.edutrack.studentportal.model.User;
 import com.edutrack.studentportal.repository.BatchRepository;
+import com.edutrack.studentportal.repository.CourseRepository;
 import com.edutrack.studentportal.repository.StudentRepository;
 import com.edutrack.studentportal.repository.UserRepository;
 import org.springframework.security.core.Authentication;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.time.LocalDateTime;
 
 @Service
 public class StudentService {
@@ -29,17 +31,23 @@ public class StudentService {
     private final BatchRepository batchRepository;
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
+        private final CourseRepository courseRepository;
+        private final CourseAuditService courseAuditService;
 
     //Constructor injection
     public StudentService(StudentRepository studentRepository,
                           BatchRepository batchRepository,
                           ModelMapper modelMapper,
-                          UserRepository userRepository) {
+                          UserRepository userRepository,
+                          CourseRepository courseRepository,
+                          CourseAuditService courseAuditService) {
 
         this.studentRepository = studentRepository;
         this.batchRepository = batchRepository;
         this.modelMapper = modelMapper;
         this.userRepository = userRepository;
+        this.courseRepository = courseRepository;
+        this.courseAuditService = courseAuditService;
     }
 
     //create student
@@ -63,6 +71,7 @@ public class StudentService {
 
         //DTO -> Entity
         Student student = modelMapper.map(studentDTO, Student.class);
+        student.setLastUpdatedAt(LocalDateTime.now());
 
         //If batchId is provided, check batch
         if (studentDTO.getBatchId() != null &&
@@ -88,6 +97,8 @@ public class StudentService {
 
         //Save student
         Student savedStudent = studentRepository.save(student);
+        recordStudentBatchAction("STUDENT_ADDED_TO_COURSE_BATCH", savedStudent.getBatchId(),
+                "Student added to cohort: " + savedStudent.getId());
 
         //Entity -> DTO
         return modelMapper.map(savedStudent, StudentDTO.class);
@@ -127,7 +138,7 @@ public class StudentService {
                 .anyMatch(authority ->
                         authority.getAuthority().equals("ROLE_ADMIN"))){
 
-            return modelMapper.map(student, StudentDTO.class);
+            return toStudentDTO(student);
         }
 
         //get logged-in students user record
@@ -145,7 +156,7 @@ public class StudentService {
             );
         }
 
-        return modelMapper.map(student, StudentDTO.class);
+        return toStudentDTO(student);
     }
 
     //search student by name
@@ -167,7 +178,7 @@ public class StudentService {
 
         return students
                 .stream()
-                .map(student -> modelMapper.map(student, StudentDTO.class))
+                .map(this::toStudentDTO)
                 .toList();
     }
 
@@ -178,8 +189,7 @@ public class StudentService {
 
         Page<Student> students = studentRepository.findAll(pageable);
 
-        return students
-                .map(student -> modelMapper.map(student, StudentDTO.class));
+        return students.map(this::toStudentDTO);
     }
 
 
@@ -221,12 +231,19 @@ public class StudentService {
 
         //Keep existing ID
         student.setId(existingStudent.getId());
+        student.setLastUpdatedAt(LocalDateTime.now());
 
         //Save updated student
         Student updatedStudent = studentRepository.save(student);
+        if (!java.util.Objects.equals(existingStudent.getBatchId(), updatedStudent.getBatchId())) {
+            recordStudentBatchAction("STUDENT_COHORT_UPDATED", existingStudent.getBatchId(),
+                    "Student removed from cohort: " + updatedStudent.getId());
+            recordStudentBatchAction("STUDENT_COHORT_UPDATED", updatedStudent.getBatchId(),
+                    "Student assigned to cohort: " + updatedStudent.getId());
+        }
 
         //Return DTO
-        return modelMapper.map(updatedStudent, StudentDTO.class);
+        return toStudentDTO(updatedStudent);
     }
 
     //delete student
@@ -237,6 +254,8 @@ public class StudentService {
                                 new ResourceNotFoundException("student not found with id : "+id));
 
         studentRepository.deleteById(id);
+        recordStudentBatchAction("STUDENT_REMOVED_FROM_COURSE_BATCH", student.getBatchId(),
+                "Student removed from cohort: " + student.getId());
     }
 
     //delete these methods because modelmapper replace these methods
@@ -287,7 +306,7 @@ public class StudentService {
 
         //3. If student is already in this batch
         if (batchId.equals(student.getBatchId())) {
-            return modelMapper.map(student, StudentDTO.class);
+            return toStudentDTO(student);
         }
 
         //4. Count students already assigned to this batch
@@ -300,12 +319,66 @@ public class StudentService {
         }
 
         //6. Assign batch
+        String previousBatchId = student.getBatchId();
         student.setBatchId(batchId);
+        student.setLastUpdatedAt(LocalDateTime.now());
+        student.setLastUpdatedAt(LocalDateTime.now());
 
         //7. Save student
         Student updatedStudent = studentRepository.save(student);
+        recordStudentBatchAction("STUDENT_COHORT_UPDATED", previousBatchId,
+                "Student removed from cohort: " + student.getId());
+        recordStudentBatchAction("STUDENT_COHORT_UPDATED", student.getBatchId(),
+                "Student assigned to cohort: " + student.getId());
 
         //8. Return DTO
-        return modelMapper.map(updatedStudent, StudentDTO.class);
+        return toStudentDTO(updatedStudent);
     }
+
+    private StudentDTO toStudentDTO(Student student) {
+        StudentDTO dto = modelMapper.map(student, StudentDTO.class);
+        dto.setLastUpdatedAt(student.getLastUpdatedAt());
+        if (student.getBatchId() != null) {
+            batchRepository.findById(student.getBatchId()).ifPresent(batch -> {
+                dto.setBatchName(batch.getBatchName());
+                dto.setTrainerName(batch.getTrainerName());
+                dto.setCourseId(batch.getCourseId());
+                courseRepository.findById(batch.getCourseId()).ifPresent(course -> {
+                    dto.setCourseName(course.getCourseName());
+                    dto.setInstructorName(course.getInstructorName());
+                });
+            });
+        }
+        return dto;
+    }
+
+    public List<StudentDTO> getStudentsForCurrentInstructor() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User instructor = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("Instructor account not found"));
+        if (!"INSTRUCTOR".equalsIgnoreCase(instructor.getRole())) {
+            throw new AccessDeniedException("Instructor access is required");
+        }
+        List<String> batchIds = batchRepository.findByTrainerUsernameIgnoreCase(instructor.getUsername())
+                .stream().map(Batch::getId).toList();
+        if (batchIds.isEmpty()) {
+            return List.of();
+        }
+        return studentRepository.findByBatchIdIn(batchIds).stream()
+                .map(this::toStudentDTO)
+                .toList();
+    }
+
+        private void recordStudentBatchAction(String action, String batchId, String details) {
+                if (batchId == null || batchId.isBlank()) {
+                        return;
+                }
+                batchRepository.findById(batchId).ifPresent(batch -> {
+                        String courseId = batch.getCourseId();
+                        String courseName = courseRepository.findById(courseId)
+                                        .map(com.edutrack.studentportal.model.Course::getCourseName)
+                                        .orElse(null);
+                        courseAuditService.record(action, courseId, courseName, details);
+                });
+        }
 }

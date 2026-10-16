@@ -3,6 +3,10 @@ package com.edutrack.studentportal.model;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
+
 @Document(collection = "courses")
 public class Course {
 
@@ -17,25 +21,42 @@ public class Course {
 
     private String description;
 
+    private Map<String, String> descriptionTranslations = new HashMap<>();
+
+    private String parentCourseId;
+
+    private String status = "DRAFT";
+
+    private String instructorName;
+
+    private LocalDate startDate;
+
+    private LocalDate endDate;
+
+    private Integer capacity;
+
+    private Integer enrolledStudents = 0;
+
     public Course() {
 
     }
 
-
-    // Parameterized Constructor
-    public Course(String id, String courseName,
-                  String duration, double fees,
-                  String description) {
-
+    public Course(String id, String courseName, String duration,
+                  double fees, String description, String status,
+                  String instructorName, LocalDate startDate,
+                  LocalDate endDate, Integer capacity, Integer enrolledStudents) {
         this.id = id;
         this.courseName = courseName;
         this.duration = duration;
         this.fees = fees;
         this.description = description;
+        this.status = status;
+        this.instructorName = instructorName;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.capacity = capacity;
+        this.enrolledStudents = enrolledStudents;
     }
-
-
-    // Getters and Setters
 
     public String getId() {
         return id;
@@ -45,7 +66,6 @@ public class Course {
         this.id = id;
     }
 
-
     public String getCourseName() {
         return courseName;
     }
@@ -53,7 +73,6 @@ public class Course {
     public void setCourseName(String courseName) {
         this.courseName = courseName;
     }
-
 
     public String getDuration() {
         return duration;
@@ -63,7 +82,6 @@ public class Course {
         this.duration = duration;
     }
 
-
     public double getFees() {
         return fees;
     }
@@ -71,7 +89,6 @@ public class Course {
     public void setFees(double fees) {
         this.fees = fees;
     }
-
 
     public String getDescription() {
         return description;
@@ -81,4 +98,67 @@ public class Course {
         this.description = description;
     }
 
+    public Map<String, String> getDescriptionTranslations() {
+        return descriptionTranslations == null ? Map.of() : descriptionTranslations;
+    }
+
+    public void setDescriptionTranslations(Map<String, String> descriptionTranslations) {
+        this.descriptionTranslations = descriptionTranslations == null ? new HashMap<>() : new HashMap<>(descriptionTranslations);
+    }
+
+    public String getParentCourseId() {
+        return parentCourseId;
+    }
+
+    public void setParentCourseId(String parentCourseId) {
+        this.parentCourseId = parentCourseId;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getInstructorName() {
+        return instructorName;
+    }
+
+    public void setInstructorName(String instructorName) {
+        this.instructorName = instructorName;
+    }
+
+    public LocalDate getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(LocalDate startDate) {
+        this.startDate = startDate;
+    }
+
+    public LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDate endDate) {
+        this.endDate = endDate;
+    }
+
+    public Integer getCapacity() {
+        return capacity;
+    }
+
+    public void setCapacity(Integer capacity) {
+        this.capacity = capacity;
+    }
+
+    public Integer getEnrolledStudents() {
+        return enrolledStudents == null ? 0 : enrolledStudents;
+    }
+
+    public void setEnrolledStudents(Integer enrolledStudents) {
+        this.enrolledStudents = enrolledStudents;
+    }
 }

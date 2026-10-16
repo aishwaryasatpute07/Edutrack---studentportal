@@ -4,8 +4,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -19,63 +17,96 @@ public class SecurityConfig {
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder(){
-
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
 
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        //login
+                    .requestMatchers("/admin.html").permitAll()
+                    .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/users/login").permitAll()
 
-                        //User Management -> ADMIN only
                         .requestMatchers("/users/**").hasRole("ADMIN")
 
-                        //Students:
-                        //ADMIN and STUDENT can make GET requests
-                        .requestMatchers(HttpMethod.GET,"/students/**")
-                        .hasAnyRole("ADMIN","STUDENT")
+                        .requestMatchers(HttpMethod.GET, "/students/search", "/students/sort/**", "/students/pagination")
+                        .hasRole("ADMIN")
 
-                        //Post, put, delete -> ADMIN only
+                        .requestMatchers(HttpMethod.GET, "/students/*")
+                        .hasAnyRole("ADMIN", "STUDENT")
+
                         .requestMatchers("/students/**").hasRole("ADMIN")
 
-                        //Courses -> ADMIN only
+                        .requestMatchers(HttpMethod.GET, "/courses/hierarchy", "/courses/*/audit")
+                        .hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.GET, "/courses/**")
+                        .hasAnyRole("ADMIN", "STUDENT", "INSTRUCTOR")
+
                         .requestMatchers("/courses/**").hasRole("ADMIN")
 
-                        //Batches -> ADMIN only
+                        .requestMatchers(HttpMethod.GET, "/enrollments/student/*")
+                        .hasAnyRole("ADMIN", "STUDENT")
+
+                        .requestMatchers(HttpMethod.GET, "/enrollments/course/*")
+                        .hasRole("ADMIN")
+
+                        .requestMatchers("/enrollments/**").hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.GET, "/reports/performance/student/*")
+                        .hasAnyRole("ADMIN", "STUDENT", "INSTRUCTOR")
+
+                        .requestMatchers("/reports/**").hasRole("ADMIN")
+
                         .requestMatchers("/batches/**").hasRole("ADMIN")
 
-                        //Attendance:
-                        //ADMIN and STUDENT can view attendance
+                        .requestMatchers(HttpMethod.GET, "/attendance/student/*", "/attendance/student/*/report")
+                        .hasAnyRole("ADMIN", "STUDENT", "INSTRUCTOR")
+
+                        .requestMatchers(HttpMethod.GET, "/attendance/student/*/report/pdf")
+                        .hasAnyRole("ADMIN", "STUDENT", "INSTRUCTOR")
+
                         .requestMatchers(HttpMethod.GET, "/attendance/**")
-                        .hasAnyRole("ADMIN", "STUDENT")
+                        .hasRole("ADMIN")
 
-                        //ADMIN can create, update and delete attendance
                         .requestMatchers("/attendance/**")
-                        .hasRole("ADMIN")
+                        .hasAnyRole("ADMIN", "INSTRUCTOR")
 
-                        // Payments
-                        .requestMatchers(HttpMethod.GET, "/payments/**")
+                        .requestMatchers(HttpMethod.GET, "/payments").hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.GET, "/payments/students/*/summary", "/payments/students/*/history",
+                                "/payments/*/receipt", "/payments/*/receipt/pdf")
                         .hasAnyRole("ADMIN", "STUDENT")
 
-                        .requestMatchers(HttpMethod.POST, "/payments/create-order")
-                        .hasAnyRole("ADMIN", "STUDENT")
+                        .requestMatchers(HttpMethod.POST, "/payments/webhook").permitAll()
 
-                        .requestMatchers(HttpMethod.POST, "/payments/verify")
-                        .hasAnyRole("ADMIN", "STUDENT")
+                        .requestMatchers(HttpMethod.POST, "/payments/create-order", "/payments/verify")
+                        .hasRole("STUDENT")
 
-                        .requestMatchers("/payments/**")
-                        .hasRole("ADMIN")
+                        .requestMatchers("/payments/**").hasRole("ADMIN")
+
+                        .requestMatchers("/academic-records/student/*", "/academic-records/student/*/marksheet")
+                        .hasAnyRole("ADMIN", "STUDENT", "INSTRUCTOR")
+
+                        .requestMatchers("/academic-records/student/*/marksheet/pdf")
+                        .hasAnyRole("ADMIN", "STUDENT", "INSTRUCTOR")
+
+                        .requestMatchers(HttpMethod.GET, "/academic-records").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/academic-records").hasAnyRole("ADMIN", "INSTRUCTOR")
+                        .requestMatchers(HttpMethod.PUT, "/academic-records/*").hasAnyRole("ADMIN", "INSTRUCTOR")
+                        .requestMatchers(HttpMethod.DELETE, "/academic-records/*").hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.GET, "/hall-tickets/student/*", "/hall-tickets/*/pdf")
+                        .hasAnyRole("ADMIN", "STUDENT")
+                        .requestMatchers(HttpMethod.GET, "/hall-tickets").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/hall-tickets").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/hall-tickets/*").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/hall-tickets/*").hasRole("ADMIN")
+
+                        .requestMatchers("/instructors/me/students").hasRole("INSTRUCTOR")
 
                         .requestMatchers("/payment.html")
                         .permitAll()
 
-                        //everything else
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(

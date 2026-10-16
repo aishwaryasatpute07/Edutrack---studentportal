@@ -20,6 +20,8 @@ public class BatchDTO {
     @NotBlank(message = "Trainer name is required")
     private String trainerName;
 
+    private String trainerUsername;
+
     @NotNull(message = "Start date is required")
     private LocalDate startDate;
 
@@ -72,6 +74,14 @@ public class BatchDTO {
 
     public void setTrainerName(String trainerName) {
         this.trainerName = trainerName;
+    }
+
+    public String getTrainerUsername() {
+        return trainerUsername;
+    }
+
+    public void setTrainerUsername(String trainerUsername) {
+        this.trainerUsername = trainerUsername;
     }
 
 

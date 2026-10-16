@@ -1,255 +1,243 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>EduTrack - Fee Payment</title>
+    <style>
+        :root { color-scheme: light; font-family: Arial, sans-serif; color: #20312b; background: #f4f7f4; }
+        body { max-width: 920px; margin: 0 auto; padding: 28px 18px 48px; }
+        h1, h2 { margin-top: 0; }
+        .panel { margin: 18px 0; padding: 20px; border: 1px solid #dce6df; border-radius: 8px; background: white; }
+        label { display: block; margin-bottom: 7px; font-weight: 600; }
+        select, button { min-height: 40px; padding: 8px 12px; border: 1px solid #ccd8d0; border-radius: 5px; background: white; font: inherit; }
+        select { width: 100%; max-width: 520px; }
+        button { cursor: pointer; }
+        button.primary { border-color: #08765d; background: #08765d; color: white; }
+        button:disabled { cursor: wait; opacity: .6; }
+        .status { min-height: 22px; color: #52645f; }
+        .status.error { color: #a3312d; }
+        .fees { display: grid; grid-template-columns: 1fr auto; gap: 10px 18px; max-width: 560px; }
+        .fees strong { padding-top: 10px; border-top: 1px solid #dce6df; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px 8px; border-bottom: 1px solid #e6ece8; text-align: left; }
+        th { color: #52645f; font-size: 13px; }
+        .empty { color: #65746d; }
+        @media (max-width: 600px) { .panel { padding: 14px; overflow-x: auto; } }
+    </style>
 </head>
-
 <body>
+    <h1>Student fee payment</h1>
+    <p>Review the current fee balance and pay the exact outstanding amount securely.</p>
+    <div id="status" class="status" role="status" aria-live="polite"></div>
 
-<h2>EduTrack Student Fee Payment</h2>
+    <section class="panel">
+        <label for="course">Enrolled course</label>
+        <select id="course" disabled><option value="">Loading your enrollments…</option></select>
+        <div id="feeSummary" class="fees" style="margin: 20px 0"></div>
+        <button id="payButton" class="primary" type="button" disabled>Pay outstanding balance</button>
+    </section>
 
-<label>Student ID:</label>
-<br>
-<input type="text" id="studentId" placeholder="Enter Student ID">
+    <section class="panel">
+        <h2>Payment history</h2>
+        <div id="history" class="empty">Loading payment history…</div>
+    </section>
 
-<br><br>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+        const token = sessionStorage.getItem("edu-token") || "";
+        const role = sessionStorage.getItem("edu-role") || "";
+        const studentId = sessionStorage.getItem("edu-student-id") || "";
+        const courseSelect = document.getElementById("course");
+        const feeSummary = document.getElementById("feeSummary");
+        const payButton = document.getElementById("payButton");
+        const statusBox = document.getElementById("status");
+        let enrollments = [];
+        let fees = [];
+        let payments = [];
 
-<label>Amount:</label>
-<br>
-<input type="number" id="amount" placeholder="Enter Amount">
-
-<br><br>
-
-<label>JWT Token:</label>
-<br>
-<input type="text" id="token" placeholder="Paste your JWT token">
-
-<br><br>
-
-<button onclick="createOrder()">Pay Fees</button>
-
-
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-
-<script>
-
-    async function createOrder() {
-
-        const studentId =
-            document.getElementById("studentId").value;
-
-        const amount =
-            document.getElementById("amount").value;
-
-        const token =
-            document.getElementById("token").value;
-
-
-        // Check required fields
-        if (!studentId) {
-            alert("Please enter Student ID");
-            return;
+        function escapeHtml(value) {
+            return String(value ?? "").replace(/[&<>"']/g, character => ({
+                "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+            }[character]));
         }
 
-        if (!amount || amount <= 0) {
-            alert("Please enter a valid amount");
-            return;
+        function money(value) {
+            return `₹${Number(value || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
 
-        if (!token) {
-            alert("Please enter JWT token");
-            return;
+        function showStatus(message, isError = false) {
+            statusBox.textContent = message;
+            statusBox.classList.toggle("error", isError);
         }
 
-
-        // Call Spring Boot backend
-        const response = await fetch(
-            "/payments/create-order",
-            {
-                method: "POST",
-
+        async function request(path, options = {}) {
+            const response = await fetch(path, {
+                ...options,
                 headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": "Bearer " + token
-                },
-
-                body: JSON.stringify({
-                    studentId: studentId,
-                    amount: Number(amount)
-                })
+                    ...(options.body ? { "Content-Type": "application/json" } : {}),
+                    Authorization: `Bearer ${token}`,
+                    ...(options.headers || {})
+                }
+            });
+            if (!response.ok) {
+                let message = `Request failed (${response.status})`;
+                try {
+                    const body = await response.json();
+                    message = body.message || body.error || message;
+                } catch { }
+                throw new Error(message);
             }
-        );
-
-
-        // Check backend response
-        if (!response.ok) {
-
-            const errorText =
-                await response.text();
-
-            console.log(
-                "Backend error:",
-                errorText
-            );
-
-            alert(
-                "Unable to create payment order"
-            );
-
-            return;
+            if (response.status === 204) return null;
+            const body = await response.text();
+            return body ? JSON.parse(body) : null;
         }
 
-
-        // Get response from backend
-        const data =
-            await response.json();
-
-        console.log(
-            "Payment order:",
-            data
-        );
-
-
-        // Razorpay Checkout configuration
-        const options = {
-
-            // Razorpay TEST Key ID
-            key: "rzp_test_TPD9KFWqnxnLl2",
-
-            // Amount in paise
-            amount: data.amount * 100,
-
-            currency: "INR",
-
-            name: "EduTrack",
-
-            description: "Student Fee Payment",
-
-            order_id: data.orderId,
-
-
-            // Called after successful payment
-            handler: async function (response) {
-
-                console.log(
-                    "Payment ID:",
-                    response.razorpay_payment_id
-                );
-
-                console.log(
-                    "Order ID:",
-                    response.razorpay_order_id
-                );
-
-                console.log(
-                    "Signature:",
-                    response.razorpay_signature
-                );
-
-
-                // Send payment details
-                // to Spring Boot for verification
-
-                try {
-
-                    const verifyResponse =
-                        await fetch(
-                            "/payments/verify",
-                            {
-                                method: "POST",
-
-                                headers: {
-                                    "Content-Type":
-                                        "application/json",
-
-                                    "Authorization":
-                                        "Bearer " + token
-                                },
-
-                                body: JSON.stringify({
-
-                                    studentId:
-                                        studentId,
-
-                                    amount:
-                                        Number(amount),
-
-                                    orderId:
-                                        response.razorpay_order_id,
-
-                                    paymentId:
-                                        response.razorpay_payment_id,
-
-                                    signature:
-                                        response.razorpay_signature,
-
-                                    paymentMethod:
-                                        "RAZORPAY"
-                                })
-                            }
-                        );
-
-
-                    // Check verification response
-                    if (!verifyResponse.ok) {
-
-                        const errorText =
-                            await verifyResponse.text();
-
-                        console.log(
-                            "Verification error:",
-                            errorText
-                        );
-
-                        alert(
-                            "Payment was completed, but verification failed."
-                        );
-
-                        return;
-                    }
-
-
-                    // Get verified payment
-                    const verifiedPayment =
-                        await verifyResponse.json();
-
-
-                    console.log(
-                        "Verified payment:",
-                        verifiedPayment
-                    );
-
-
-                    alert(
-                        "Payment successful and verified!"
-                    );
-
-
-                } catch (error) {
-
-                    console.error(
-                        "Verification error:",
-                        error
-                    );
-
-                    alert(
-                        "Payment completed, but verification failed."
-                    );
-                }
+        function renderFees() {
+            const courseId = courseSelect.value;
+            const fee = fees.find(item => item.courseId === courseId);
+            const enrollment = enrollments.find(item => item.courseId === courseId);
+            if (!fee || !enrollment) {
+                feeSummary.innerHTML = "";
+                payButton.disabled = true;
+                return;
             }
-        };
+            const rows = [
+                ["Tuition", fee.tuitionFee],
+                ...Object.entries(fee.subjectFees || {}),
+                ["Sports and extracurricular", fee.sportsFee],
+                ["Examination", fee.examinationFee],
+                ["Other charges", fee.otherCharges],
+                ["Discount", -Number(fee.discount || 0)],
+                ["Total fees", fee.totalFee],
+                ["Amount paid", fee.paidAmount],
+                ["Outstanding balance", fee.pendingAmount]
+            ];
+            feeSummary.innerHTML = rows.map(([label, amount]) =>
+                `<span>${escapeHtml(label)}</span><span>${money(amount)}</span>`
+            ).join("");
+            payButton.disabled = Number(fee.pendingAmount) <= 0
+                || String(enrollment.status || "").toUpperCase() === "CANCELLED";
+        }
 
+        function renderHistory() {
+            if (!payments.length) {
+                document.getElementById("history").innerHTML = '<p class="empty">No payments have been recorded.</p>';
+                return;
+            }
+            document.getElementById("history").innerHTML = `<table><thead><tr>
+                <th>Course</th><th>Amount</th><th>Status</th><th>Date</th><th>Receipt</th>
+            </tr></thead><tbody>${payments.map(payment => `<tr>
+                <td>${escapeHtml(payment.courseName || payment.courseId)}</td>
+                <td>${money(payment.amount)}</td>
+                <td>${escapeHtml(payment.status || "PENDING")}</td>
+                <td>${escapeHtml(payment.paymentDate || payment.createdAt || "—")}</td>
+                <td>${String(payment.status || "").toUpperCase() === "VERIFIED"
+                    ? `<button type="button" data-receipt="${escapeHtml(payment.id)}">Download</button>`
+                    : "—"}</td>
+            </tr>`).join("")}</tbody></table>`;
+        }
 
-        // Create Razorpay object
-        const razorpay =
-            new Razorpay(options);
+        async function refresh() {
+            const [enrollmentRows, feeRows, paymentRows] = await Promise.all([
+                request(`/enrollments/student/${encodeURIComponent(studentId)}`),
+                request(`/payments/students/${encodeURIComponent(studentId)}/summary`),
+                request(`/payments/students/${encodeURIComponent(studentId)}/history`)
+            ]);
+            enrollments = enrollmentRows;
+            fees = feeRows;
+            payments = paymentRows;
+            courseSelect.innerHTML = enrollments.length
+                ? enrollments.map(enrollment => {
+                    const fee = fees.find(item => item.courseId === enrollment.courseId);
+                    if (!fee) return "";
+                    return `<option value="${escapeHtml(fee.courseId)}">${escapeHtml(fee.courseName)}</option>`;
+                }).join("")
+                : '<option value="">No enrolled courses</option>';
+            courseSelect.disabled = !enrollments.length;
+            renderFees();
+            renderHistory();
+        }
 
+        async function beginPayment() {
+            const courseId = courseSelect.value;
+            const fee = fees.find(item => item.courseId === courseId);
+            if (!fee || Number(fee.pendingAmount) <= 0) {
+                showStatus("There is no outstanding balance for this course.", true);
+                return;
+            }
+            payButton.disabled = true;
+            showStatus("Preparing secure checkout…");
+            try {
+                const order = await request("/payments/create-order", {
+                    method: "POST",
+                    body: JSON.stringify({ courseId })
+                });
+                if (typeof window.Razorpay !== "function") {
+                    throw new Error("Razorpay Checkout could not be loaded. Please retry.");
+                }
+                const checkout = new window.Razorpay({
+                    key: order.keyId,
+                    amount: Math.round(Number(order.amount) * 100),
+                    currency: "INR",
+                    name: "EduTrack",
+                    description: `Fee payment · ${fee.courseName}`,
+                    order_id: order.orderId,
+                    handler: async gatewayResult => {
+                        showStatus("Payment submitted. Verifying with the payment provider…");
+                        try {
+                            await request("/payments/verify", {
+                                method: "POST",
+                                body: JSON.stringify({
+                                    orderId: gatewayResult.razorpay_order_id,
+                                    paymentId: gatewayResult.razorpay_payment_id,
+                                    signature: gatewayResult.razorpay_signature
+                                })
+                            });
+                            showStatus("Payment verified successfully.");
+                        } catch (error) {
+                            showStatus(`Payment was submitted but verification is pending: ${error.message}`, true);
+                        } finally {
+                            await refresh();
+                            renderFees();
+                        }
+                    },
+                    modal: { ondismiss: () => showStatus("Checkout closed. The payment remains pending until verified.") }
+                });
+                checkout.on("payment.failed", () => showStatus("Payment failed. Your balance has not been changed.", true));
+                checkout.open();
+            } catch (error) {
+                showStatus(error.message, true);
+                payButton.disabled = false;
+            }
+        }
 
-        // Open Razorpay Checkout
-        razorpay.open();
-    }
+        async function downloadReceipt(paymentId) {
+            const response = await fetch(`/payments/${encodeURIComponent(paymentId)}/receipt/pdf`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error(`Receipt download failed (${response.status})`);
+            const url = URL.createObjectURL(await response.blob());
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `receipt-${paymentId}.pdf`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
 
-</script>
+        courseSelect.addEventListener("change", renderFees);
+        payButton.addEventListener("click", beginPayment);
+        document.getElementById("history").addEventListener("click", event => {
+            const button = event.target.closest("[data-receipt]");
+            if (button) downloadReceipt(button.dataset.receipt).catch(error => showStatus(error.message, true));
+        });
 
+        if (!token || role !== "STUDENT" || !studentId) {
+            courseSelect.innerHTML = '<option value="">Sign in with your student account first</option>';
+            showStatus("A signed-in student account is required. Sign in through the student portal first.", true);
+        } else {
+            refresh().catch(error => showStatus(error.message, true));
+        }
+    </script>
 </body>
 </html>

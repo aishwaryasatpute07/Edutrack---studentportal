@@ -22,4 +22,6 @@ public interface StudentRepository extends MongoRepository<Student, String> {
 
     //count student assigned to batch
     long countByBatchId(String batchId);
+
+    List<Student> findByBatchIdIn(List<String> batchIds);
 }

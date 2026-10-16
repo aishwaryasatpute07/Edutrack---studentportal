@@ -3,7 +3,6 @@ package com.edutrack.studentportal.security;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -30,11 +29,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     )throws ServletException, IOException {
 
-        System.out.println("JWT Filter Running");
-
         String authHeader = request.getHeader("Authorization");
-
-        System.out.println("Authorization Header: " + authHeader);
 
         if(authHeader == null || !authHeader.startsWith("Bearer ")){
             filterChain.doFilter(request, response);
@@ -49,10 +44,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             String role = jwtService.extractRole(token);
 
-            System.out.println("Requested URL: " + request.getRequestURI());
-            System.out.println("JWT Username: " + username);
-            System.out.println("JWT Role: " + role);
-
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
                             username,
@@ -64,9 +55,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .getContext()
                     .setAuthentication(authentication);
 
-            System.out.println(
-                    SecurityContextHolder.getContext().getAuthentication()
-            );
         }
 
         filterChain.doFilter(request, response);

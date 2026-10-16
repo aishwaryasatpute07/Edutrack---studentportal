@@ -1,9 +1,12 @@
 package com.edutrack.studentportal.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Document(collection = "payments")
 public class Payment {
@@ -13,10 +16,14 @@ public class Payment {
 
     private String studentId;
 
+    private String courseId;
+
     private double amount;
 
+    @Indexed(unique = true, sparse = true)
     private String orderId;
 
+    @Indexed(unique = true, sparse = true)
     private String paymentId;
 
     private String signature;
@@ -27,6 +34,13 @@ public class Payment {
 
     private LocalDateTime paymentDate;
 
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
+
+    private double totalFeeAtOrder;
+
+    private Map<String, Double> feeBreakdown = new LinkedHashMap<>();
 
     // Default Constructor
     public Payment() {
@@ -36,6 +50,7 @@ public class Payment {
     // Parameterized Constructor
     public Payment(String id,
                    String studentId,
+                   String courseId,
                    double amount,
                    String orderId,
                    String paymentId,
@@ -46,6 +61,7 @@ public class Payment {
 
         this.id = id;
         this.studentId = studentId;
+        this.courseId = courseId;
         this.amount = amount;
         this.orderId = orderId;
         this.paymentId = paymentId;
@@ -75,6 +91,14 @@ public class Payment {
         this.studentId = studentId;
     }
 
+
+    public String getCourseId() {
+        return courseId;
+    }
+
+    public void setCourseId(String courseId) {
+        this.courseId = courseId;
+    }
 
     public double getAmount() {
         return amount;
@@ -136,5 +160,37 @@ public class Payment {
 
     public void setPaymentDate(LocalDateTime paymentDate) {
         this.paymentDate = paymentDate;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public double getTotalFeeAtOrder() {
+        return totalFeeAtOrder;
+    }
+
+    public void setTotalFeeAtOrder(double totalFeeAtOrder) {
+        this.totalFeeAtOrder = totalFeeAtOrder;
+    }
+
+    public Map<String, Double> getFeeBreakdown() {
+        return feeBreakdown;
+    }
+
+    public void setFeeBreakdown(Map<String, Double> feeBreakdown) {
+        this.feeBreakdown = feeBreakdown == null ? new LinkedHashMap<>() : new LinkedHashMap<>(feeBreakdown);
     }
 }

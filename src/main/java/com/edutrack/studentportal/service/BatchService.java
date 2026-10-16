@@ -4,6 +4,7 @@ import com.edutrack.studentportal.dto.BatchDTO;
 import com.edutrack.studentportal.exception.ResourceNotFoundException;
 import com.edutrack.studentportal.exception.DuplicateResourceException;
 import com.edutrack.studentportal.model.Batch;
+import com.edutrack.studentportal.model.Course;
 import com.edutrack.studentportal.repository.BatchRepository;
 import com.edutrack.studentportal.repository.CourseRepository;
 import org.modelmapper.ModelMapper;
@@ -21,11 +22,14 @@ public class BatchService {
     private final BatchRepository batchRepository;
     private final ModelMapper modelMapper;
     private final CourseRepository courseRepository;
+    private final CourseAuditService courseAuditService;
 
-    public BatchService(BatchRepository batchRepository, ModelMapper modelMapper, CourseRepository courseRepository){
+    public BatchService(BatchRepository batchRepository, ModelMapper modelMapper,
+                        CourseRepository courseRepository, CourseAuditService courseAuditService){
         this.batchRepository = batchRepository;
         this.modelMapper = modelMapper;
         this.courseRepository = courseRepository;
+        this.courseAuditService = courseAuditService;
     }
 
     //create batch
@@ -59,6 +63,7 @@ public class BatchService {
 
         //Save
         Batch savedBatch = batchRepository.save(batch);
+        recordCourseBatchAction("BATCH_CREATED", savedBatch);
 
         //Entity -> DTO
         return modelMapper.map(savedBatch, BatchDTO.class);
@@ -154,6 +159,10 @@ public class BatchService {
 
         //save updated batch
         Batch updatedBatch = batchRepository.save(batch);
+        if (!java.util.Objects.equals(existingBatch.getCourseId(), updatedBatch.getCourseId())) {
+            recordCourseBatchAction("BATCH_COURSE_CHANGED", existingBatch);
+        }
+        recordCourseBatchAction("BATCH_UPDATED", updatedBatch);
 
         //Entity -> DTO
         return modelMapper.map(updatedBatch, BatchDTO.class);
@@ -168,5 +177,13 @@ public class BatchService {
                                 "batch not found"));
 
         batchRepository.deleteById(id);
+        recordCourseBatchAction("BATCH_DELETED", batch);
+    }
+
+    private void recordCourseBatchAction(String action, Batch batch) {
+        Course course = courseRepository.findById(batch.getCourseId()).orElse(null);
+        courseAuditService.record(action, batch.getCourseId(),
+                course == null ? null : course.getCourseName(),
+                "Batch " + batch.getBatchName());
     }
 }

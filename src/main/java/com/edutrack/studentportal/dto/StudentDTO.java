@@ -3,6 +3,8 @@ package com.edutrack.studentportal.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
+import java.time.LocalDateTime;
+
 public class StudentDTO {
 
     private String id;
@@ -19,6 +21,18 @@ public class StudentDTO {
     private double fees;
 
     private String batchId;
+
+    private String batchName;
+
+    private String courseId;
+
+    private String courseName;
+
+    private String trainerName;
+
+    private String instructorName;
+
+    private LocalDateTime lastUpdatedAt;
 
     public StudentDTO() {
     }
@@ -79,5 +93,53 @@ public class StudentDTO {
 
     public void setBatchId(String batchId) {
         this.batchId = batchId;
+    }
+
+    public String getBatchName() {
+        return batchName;
+    }
+
+    public void setBatchName(String batchName) {
+        this.batchName = batchName;
+    }
+
+    public String getCourseId() {
+        return courseId;
+    }
+
+    public void setCourseId(String courseId) {
+        this.courseId = courseId;
+    }
+
+    public String getCourseName() {
+        return courseName;
+    }
+
+    public void setCourseName(String courseName) {
+        this.courseName = courseName;
+    }
+
+    public String getTrainerName() {
+        return trainerName;
+    }
+
+    public void setTrainerName(String trainerName) {
+        this.trainerName = trainerName;
+    }
+
+    public String getInstructorName() {
+        return instructorName;
+    }
+
+    public void setInstructorName(String instructorName) {
+        this.instructorName = instructorName;
+    }
+
+    public LocalDateTime getLastUpdatedAt() {
+        return lastUpdatedAt;
+    }
+
+    public void setLastUpdatedAt(LocalDateTime lastUpdatedAt) {
+        this.lastUpdatedAt = lastUpdatedAt;
     }
 }

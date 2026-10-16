@@ -17,6 +17,8 @@ public class Batch {
 
     private String trainerName;
 
+    private String trainerUsername;
+
     private LocalDate startDate;
 
     private LocalDate endDate;
@@ -71,6 +73,14 @@ public class Batch {
 
     public void setTrainerName(String trainerName) {
         this.trainerName = trainerName;
+    }
+
+    public String getTrainerUsername() {
+        return trainerUsername;
+    }
+
+    public void setTrainerUsername(String trainerUsername) {
+        this.trainerUsername = trainerUsername;
     }
 
     public LocalDate getStartDate() {

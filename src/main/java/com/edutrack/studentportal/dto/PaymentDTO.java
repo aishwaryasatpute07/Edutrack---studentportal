@@ -10,6 +10,8 @@ public class PaymentDTO {
     @NotBlank(message = "student ID is required")
     private String studentId;
 
+    private String courseId;
+
     @Positive(message = "amount should be greater than 0")
     private double amount;
 
@@ -23,6 +25,12 @@ public class PaymentDTO {
 
     private String status;
 
+    private String keyId;
+
+    private java.time.LocalDateTime createdAt;
+
+    private java.time.LocalDateTime paymentDate;
+
 
     // Default Constructor
     public PaymentDTO() {
@@ -32,6 +40,7 @@ public class PaymentDTO {
     // Parameterized Constructor
     public PaymentDTO(String id,
                       String studentId,
+                      String courseId,
                       double amount,
                       String orderId,
                       String paymentId,
@@ -41,6 +50,7 @@ public class PaymentDTO {
 
         this.id = id;
         this.studentId = studentId;
+        this.courseId = courseId;
         this.amount = amount;
         this.orderId = orderId;
         this.paymentId = paymentId;
@@ -69,6 +79,13 @@ public class PaymentDTO {
         this.studentId = studentId;
     }
 
+    public String getCourseId() {
+        return courseId;
+    }
+
+    public void setCourseId(String courseId) {
+        this.courseId = courseId;
+    }
 
     public double getAmount() {
         return amount;
@@ -121,5 +138,29 @@ public class PaymentDTO {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getKeyId() {
+        return keyId;
+    }
+
+    public void setKeyId(String keyId) {
+        this.keyId = keyId;
+    }
+
+    public java.time.LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(java.time.LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public java.time.LocalDateTime getPaymentDate() {
+        return paymentDate;
+    }
+
+    public void setPaymentDate(java.time.LocalDateTime paymentDate) {
+        this.paymentDate = paymentDate;
     }
 }

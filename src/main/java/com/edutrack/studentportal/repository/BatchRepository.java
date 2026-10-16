@@ -8,6 +8,8 @@ import java.util.List;
 
 public interface BatchRepository extends MongoRepository<Batch, String> {
 
+    List<Batch> findByTrainerUsernameIgnoreCase(String trainerUsername);
+
     //search batch by batchname
     List<Batch> findByBatchNameContainingIgnoreCase(String batchName);
 

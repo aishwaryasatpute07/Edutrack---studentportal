@@ -12,6 +12,8 @@ public interface AttendanceRepository
     // Get attendance of a student
     List<Attendance> findByStudentId(String studentId);
 
+    List<Attendance> findByStudentIdIn(List<String> studentIds);
+
     // Get attendance of a student on a particular date
     boolean existsByStudentIdAndDate(
             String studentId,

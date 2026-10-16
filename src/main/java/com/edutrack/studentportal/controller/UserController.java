@@ -5,6 +5,7 @@ import com.edutrack.studentportal.dto.LoginResponseDTO;
 import com.edutrack.studentportal.dto.UserDTO;
 import com.edutrack.studentportal.service.UserService;
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
@@ -79,6 +80,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
+    @Operation(summary = "Log in", description = "Authenticate with a username and password to receive a JWT.", security = {})
     public LoginResponseDTO login(@Valid @RequestBody LoginDTO loginDTO){
 
         return userService.login(loginDTO);

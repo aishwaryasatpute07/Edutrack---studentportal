@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDateTime;
+
 @Document(collection = "students")
 public class Student {
 
@@ -23,6 +25,8 @@ public class Student {
     private double fees;
 
     private String batchId;
+
+    private LocalDateTime lastUpdatedAt;
 
     public Student(){
 
@@ -91,5 +95,12 @@ public class Student {
     public void setFees(double fees) {
         this.fees = fees;
     }
-}
 
+    public LocalDateTime getLastUpdatedAt() {
+        return lastUpdatedAt;
+    }
+
+    public void setLastUpdatedAt(LocalDateTime lastUpdatedAt) {
+        this.lastUpdatedAt = lastUpdatedAt;
+    }
+}

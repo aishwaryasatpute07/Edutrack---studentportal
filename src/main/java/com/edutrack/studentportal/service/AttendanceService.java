@@ -4,8 +4,12 @@ import com.edutrack.studentportal.dto.AttendanceDTO;
 import com.edutrack.studentportal.exception.DuplicateResourceException;
 import com.edutrack.studentportal.exception.ResourceNotFoundException;
 import com.edutrack.studentportal.model.Attendance;
+import com.edutrack.studentportal.model.Batch;
+import com.edutrack.studentportal.model.Course;
 import com.edutrack.studentportal.model.Student;
 import com.edutrack.studentportal.repository.AttendanceRepository;
+import com.edutrack.studentportal.repository.BatchRepository;
+import com.edutrack.studentportal.repository.CourseRepository;
 import com.edutrack.studentportal.repository.StudentRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -18,19 +22,33 @@ public class AttendanceService {
     private final AttendanceRepository attendanceRepository;
     private final StudentRepository studentRepository;
     private final ModelMapper modelMapper;
+        private final BatchRepository batchRepository;
+        private final CourseRepository courseRepository;
+        private final CourseAuditService courseAuditService;
+        private final StudentAccessService studentAccessService;
 
     public AttendanceService(
             AttendanceRepository attendanceRepository,
             StudentRepository studentRepository,
-            ModelMapper modelMapper) {
+            ModelMapper modelMapper,
+            BatchRepository batchRepository,
+            CourseRepository courseRepository,
+            CourseAuditService courseAuditService,
+            StudentAccessService studentAccessService) {
 
         this.attendanceRepository = attendanceRepository;
         this.studentRepository = studentRepository;
         this.modelMapper = modelMapper;
+        this.batchRepository = batchRepository;
+        this.courseRepository = courseRepository;
+        this.courseAuditService = courseAuditService;
+        this.studentAccessService = studentAccessService;
     }
 
     // Create attendance
     public AttendanceDTO saveAttendance(AttendanceDTO attendanceDTO) {
+        studentAccessService.requireAcademicWriteAccess(attendanceDTO.getStudentId());
+        validateStatus(attendanceDTO.getStatus());
 
         // 1. Check student exists
         Student student = studentRepository.findById(
@@ -69,6 +87,7 @@ public class AttendanceService {
         // 5. Save
         Attendance savedAttendance =
                 attendanceRepository.save(attendance);
+        recordCourseAttendance("ATTENDANCE_CREATED", student.getId(), savedAttendance.getStatus());
 
         // 6. Entity -> DTO
         return modelMapper.map(
@@ -79,6 +98,7 @@ public class AttendanceService {
 
     // Get all attendance
     public List<AttendanceDTO> getAllAttendance() {
+        studentAccessService.requireAdministrator();
 
         return attendanceRepository.findAll()
                 .stream()
@@ -92,6 +112,7 @@ public class AttendanceService {
 
     // Get attendance by ID
     public AttendanceDTO getAttendanceById(String id) {
+        studentAccessService.requireAdministrator();
 
         Attendance attendance =
                 attendanceRepository.findById(id)
@@ -110,6 +131,7 @@ public class AttendanceService {
     // Get attendance by student ID
     public List<AttendanceDTO> getAttendanceByStudentId(
             String studentId) {
+        studentAccessService.requireStudentAccess(studentId);
 
         // Check student exists
         if (!studentRepository.existsById(studentId)) {
@@ -133,6 +155,7 @@ public class AttendanceService {
     // Get attendance by date
     public List<AttendanceDTO> getAttendanceByDate(
             java.time.LocalDate date) {
+        studentAccessService.requireAdministrator();
 
         return attendanceRepository
                 .findByDate(date)
@@ -149,6 +172,8 @@ public class AttendanceService {
     public AttendanceDTO updateAttendance(
             String id,
             AttendanceDTO attendanceDTO) {
+        studentAccessService.requireAcademicWriteAccess(attendanceDTO.getStudentId());
+        validateStatus(attendanceDTO.getStatus());
 
         Attendance existingAttendance =
                 attendanceRepository.findById(id)
@@ -157,6 +182,7 @@ public class AttendanceService {
                                         "Attendance not found with id : "
                                                 + id
                                 ));
+        studentAccessService.requireAcademicWriteAccess(existingAttendance.getStudentId());
 
         // Check student exists
         Student student = studentRepository.findById(
@@ -207,6 +233,10 @@ public class AttendanceService {
         // Save
         Attendance updatedAttendance =
                 attendanceRepository.save(attendance);
+        if (!existingAttendance.getStudentId().equals(updatedAttendance.getStudentId())) {
+            recordCourseAttendance("ATTENDANCE_REASSIGNED", existingAttendance.getStudentId(), existingAttendance.getStatus());
+        }
+        recordCourseAttendance("ATTENDANCE_UPDATED", updatedAttendance.getStudentId(), updatedAttendance.getStatus());
 
         // Entity -> DTO
         return modelMapper.map(
@@ -217,6 +247,7 @@ public class AttendanceService {
 
     // Delete attendance
     public void deleteAttendance(String id) {
+        studentAccessService.requireAdministrator();
 
         Attendance attendance =
                 attendanceRepository.findById(id)
@@ -227,5 +258,28 @@ public class AttendanceService {
                                 ));
 
         attendanceRepository.delete(attendance);
+                recordCourseAttendance("ATTENDANCE_DELETED", attendance.getStudentId(), attendance.getStatus());
     }
+
+        private void recordCourseAttendance(String action, String studentId, String status) {
+                studentRepository.findById(studentId)
+                                .map(Student::getBatchId)
+                                .filter(batchId -> batchId != null && !batchId.isBlank())
+                                .flatMap(batchRepository::findById)
+                                .map(Batch::getCourseId)
+                                .ifPresent(courseId -> {
+                                        Course course = courseRepository.findById(courseId).orElse(null);
+                                        courseAuditService.record(action, courseId,
+                                                        course == null ? null : course.getCourseName(),
+                                                        "Attendance status " + status + " for student " + studentId);
+                                });
+        }
+
+        private void validateStatus(String status) {
+                if (status == null || !List.of("PRESENT", "ABSENT", "LATE", "EXCUSED")
+                                .contains(status.toUpperCase())) {
+                        throw new com.edutrack.studentportal.exception.InvalidRequestException(
+                                        "Attendance status must be PRESENT, ABSENT, LATE, or EXCUSED");
+                }
+        }
 }

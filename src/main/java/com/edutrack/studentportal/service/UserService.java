@@ -15,11 +15,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -28,25 +28,23 @@ public class UserService {
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
     private final JwtService jwtService;
-    private final PasswordEncoder passwordEncoder;
     private final StudentRepository studentRepository;
 
     // Constructor Injection
     public UserService(UserRepository userRepository,
                        ModelMapper modelMapper,
                        JwtService jwtService,
-                       PasswordEncoder passwordEncoder,
                        StudentRepository studentRepository) {
 
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
         this.jwtService = jwtService;
-        this.passwordEncoder = passwordEncoder;
         this.studentRepository = studentRepository;
     }
 
     // Create User
     public UserDTO saveUser(UserDTO userDTO){
+        normalizeAndValidateRole(userDTO);
 
         if(userRepository.existsByUsername(userDTO.getUsername())){
             throw new DuplicateResourceException(
@@ -72,14 +70,9 @@ public class UserService {
         }
 
         User user = modelMapper.map(userDTO, User.class);
-
-        user.setPassword(
-                passwordEncoder.encode(userDTO.getPassword())
-        );
-
         User savedUser = userRepository.save(user);
 
-        return modelMapper.map(savedUser, UserDTO.class);
+        return toUserDTO(savedUser);
     }
 
     // Get All Users
@@ -90,7 +83,7 @@ public class UserService {
         List<UserDTO> userDTOS = new ArrayList<>();
 
         for(User user : users){
-            userDTOS.add(modelMapper.map(user, UserDTO.class));
+            userDTOS.add(toUserDTO(user));
         }
 
         return userDTOS;
@@ -104,11 +97,25 @@ public class UserService {
                         new ResourceNotFoundException(
                                 "User not found with id : " + id));
 
-        return modelMapper.map(user, UserDTO.class);
+        return toUserDTO(user);
+    }
+
+    private void normalizeAndValidateRole(UserDTO userDTO) {
+        String role = userDTO.getRole() == null ? "" : userDTO.getRole().toUpperCase();
+        if (!List.of("ADMIN", "STUDENT", "INSTRUCTOR").contains(role)) {
+            throw new com.edutrack.studentportal.exception.InvalidRequestException(
+                    "Role must be ADMIN, STUDENT, or INSTRUCTOR");
+        }
+        userDTO.setRole(role);
+        if ("STUDENT".equals(role)
+                && (userDTO.getStudentId() == null || !studentRepository.existsById(userDTO.getStudentId()))) {
+            throw new ResourceNotFoundException("A valid student profile is required for a STUDENT account");
+        }
     }
 
     // Update User
     public UserDTO updateUser(String id, UserDTO userDTO){
+        normalizeAndValidateRole(userDTO);
 
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() ->
@@ -118,10 +125,13 @@ public class UserService {
         User user = modelMapper.map(userDTO, User.class);
 
         user.setId(existingUser.getId());
+        if (userDTO.getPassword() == null || userDTO.getPassword().isBlank()) {
+            user.setPassword(existingUser.getPassword());
+        }
 
         User updatedUser = userRepository.save(user);
 
-        return modelMapper.map(updatedUser, UserDTO.class);
+        return toUserDTO(updatedUser);
     }
 
     // Delete User
@@ -139,7 +149,7 @@ public class UserService {
 
         return userRepository.findByUsernameContainingIgnoreCase(username)
                 .stream()
-                .map(user -> modelMapper.map(user, UserDTO.class))
+                .map(this::toUserDTO)
                 .toList();
     }
 
@@ -151,7 +161,7 @@ public class UserService {
         );
 
         return users.stream()
-                .map(user -> modelMapper.map(user, UserDTO.class))
+                .map(this::toUserDTO)
                 .toList();
     }
 
@@ -162,27 +172,25 @@ public class UserService {
 
         Page<User> users = userRepository.findAll(pageable);
 
-        return users.map(user ->
-                modelMapper.map(user, UserDTO.class));
+        return users.map(this::toUserDTO);
+    }
+
+    private UserDTO toUserDTO(User user) {
+        UserDTO dto = modelMapper.map(user, UserDTO.class);
+        dto.setPassword(null);
+        return dto;
     }
 
     public LoginResponseDTO login(LoginDTO loginDTO){
 
-        System.out.println("Searching username: " + loginDTO.getUsername());
-
         Optional<User> optionalUser =
                 userRepository.findByUsername(loginDTO.getUsername());
 
-        System.out.println("User exists: " + optionalUser.isPresent());
-
         User user = optionalUser.orElseThrow(() ->
-                new ResourceNotFoundException("User not found")
+                new InvalidCredentialsException("Invalid password or username")
         );
 
-        if (!passwordEncoder.matches(
-                loginDTO.getPassword(),
-                user.getPassword()
-        )) {
+        if (!Objects.equals(loginDTO.getPassword(), user.getPassword())) {
             throw new InvalidCredentialsException("Invalid password or username");
         }
 
