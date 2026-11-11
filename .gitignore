@@ -31,3 +31,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Local credentials and per-machine Spring configuration
+.env
+.env.*
+!.env.example
+src/main/resources/application-local.properties

@@ -215,7 +215,7 @@ public class PaymentService {
         Course course = courseRepository.findById(payment.getCourseId())
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + payment.getCourseId()));
         payment.setPaymentId(request.getPaymentId());
-        payment.setSignature(null);
+        payment.setSignature(request.getSignature());
         payment.setPaymentMethod(gatewayPayment.get("method"));
         payment.setPaymentDate(LocalDateTime.now());
         payment.setStatus("VERIFIED");

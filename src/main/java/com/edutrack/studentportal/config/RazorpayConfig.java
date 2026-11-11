@@ -28,6 +28,14 @@ public class RazorpayConfig {
         private final String webhookSecret;
 
         public RazorpayProperties(String keyId, String keySecret, String webhookSecret) {
+            if (keyId == null || keyId.isBlank()) {
+                throw new IllegalStateException(
+                        "Required configuration 'razorpay.key.id' (RAZORPAY_KEY_ID) is missing");
+            }
+            if (keySecret == null || keySecret.isBlank()) {
+                throw new IllegalStateException(
+                        "Required configuration 'razorpay.key.secret' (RAZORPAY_KEY_SECRET) is missing");
+            }
             this.keyId = keyId;
             this.keySecret = keySecret;
             this.webhookSecret = webhookSecret;

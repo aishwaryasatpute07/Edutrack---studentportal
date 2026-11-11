@@ -45,8 +45,8 @@
 
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script>
-        const token = sessionStorage.getItem("edu-token") || "";
-        const role = sessionStorage.getItem("edu-role") || "";
+        let token = sessionStorage.getItem("edu-token") || "";
+        let role = sessionStorage.getItem("edu-role") || "";
         const studentId = sessionStorage.getItem("edu-student-id") || "";
         const courseSelect = document.getElementById("course");
         const feeSummary = document.getElementById("feeSummary");
@@ -55,6 +55,7 @@
         let enrollments = [];
         let fees = [];
         let payments = [];
+        let paymentInProgress = false;
 
         function escapeHtml(value) {
             return String(value ?? "").replace(/[&<>"']/g, character => ({
@@ -71,6 +72,14 @@
             statusBox.classList.toggle("error", isError);
         }
 
+        function clearSession() {
+            token = "";
+            role = "";
+            sessionStorage.removeItem("edu-token");
+            sessionStorage.removeItem("edu-role");
+            sessionStorage.removeItem("edu-student-id");
+        }
+
         async function request(path, options = {}) {
             const response = await fetch(path, {
                 ...options,
@@ -80,6 +89,12 @@
                     ...(options.headers || {})
                 }
             });
+            if (response.status === 401) {
+                clearSession();
+                showStatus("Your session expired or is invalid. Sign in again through the portal.", true);
+                throw new Error("Authentication required");
+            }
+            if (response.status === 403) throw new Error("Your account is not permitted to access this resource.");
             if (!response.ok) {
                 let message = `Request failed (${response.status})`;
                 try {
@@ -160,12 +175,14 @@
         }
 
         async function beginPayment() {
+            if (paymentInProgress) return;
             const courseId = courseSelect.value;
             const fee = fees.find(item => item.courseId === courseId);
             if (!fee || Number(fee.pendingAmount) <= 0) {
                 showStatus("There is no outstanding balance for this course.", true);
                 return;
             }
+            paymentInProgress = true;
             payButton.disabled = true;
             showStatus("Preparing secure checkout…");
             try {
@@ -198,17 +215,34 @@
                         } catch (error) {
                             showStatus(`Payment was submitted but verification is pending: ${error.message}`, true);
                         } finally {
-                            await refresh();
-                            renderFees();
+                            try {
+                                await refresh();
+                            } catch (error) {
+                                showStatus(`Payment status could not be refreshed: ${error.message}`, true);
+                            } finally {
+                                paymentInProgress = false;
+                                renderFees();
+                            }
                         }
                     },
-                    modal: { ondismiss: () => showStatus("Checkout closed. The payment remains pending until verified.") }
+                    modal: {
+                        ondismiss: () => {
+                            paymentInProgress = false;
+                            renderFees();
+                            showStatus("Checkout closed. The payment remains pending until verified.");
+                        }
+                    }
                 });
-                checkout.on("payment.failed", () => showStatus("Payment failed. Your balance has not been changed.", true));
+                checkout.on("payment.failed", () => {
+                    paymentInProgress = false;
+                    renderFees();
+                    showStatus("Payment failed. Your balance has not been changed.", true);
+                });
                 checkout.open();
             } catch (error) {
+                paymentInProgress = false;
                 showStatus(error.message, true);
-                payButton.disabled = false;
+                renderFees();
             }
         }
 
@@ -216,6 +250,12 @@
             const response = await fetch(`/payments/${encodeURIComponent(paymentId)}/receipt/pdf`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
+            if (response.status === 401) {
+                clearSession();
+                showStatus("Your session expired or is invalid. Sign in again through the portal.", true);
+                throw new Error("Authentication required");
+            }
+            if (response.status === 403) throw new Error("Your account is not permitted to access this receipt.");
             if (!response.ok) throw new Error(`Receipt download failed (${response.status})`);
             const url = URL.createObjectURL(await response.blob());
             const link = document.createElement("a");

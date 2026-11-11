@@ -1712,6 +1712,7 @@
         let editingRecordId = "";
         let studentDashboardData = { student: null, enrollments: [], attendance: [], fees: [], payments: [], records: [], hallTickets: [], performance: null, courses: [] };
         let instructorDashboardData = { students: [], selectedStudentId: "", attendance: [], records: [], enrollments: [] };
+        let studentPaymentInProgress = false;
 
         function courseName(id) { return allRows().find(course => course.id === id)?.courseName || t("noCourse"); }
         function studentName(id) { return adminData.students.find(student => student.id === id)?.name || t("noStudent"); }
@@ -1862,6 +1863,8 @@
             URL.revokeObjectURL(objectUrl);
         }
         async function beginStudentPayment(courseId) {
+            if (studentPaymentInProgress) return;
+            studentPaymentInProgress = true;
             try {
                 const order = await request("/payments/create-order", {
                     method: "POST",
@@ -1877,27 +1880,39 @@
                     order_id: order.orderId,
                     handler: async gatewayResult => {
                         try {
-                            await request("/payments/verify", {
-                                method: "POST",
-                                body: JSON.stringify({
-                                    orderId: gatewayResult.razorpay_order_id,
-                                    paymentId: gatewayResult.razorpay_payment_id,
-                                    signature: gatewayResult.razorpay_signature
-                                })
-                            });
-                            showNotice(t("paymentVerified"));
+                            try {
+                                await request("/payments/verify", {
+                                    method: "POST",
+                                    body: JSON.stringify({
+                                        orderId: gatewayResult.razorpay_order_id,
+                                        paymentId: gatewayResult.razorpay_payment_id,
+                                        signature: gatewayResult.razorpay_signature
+                                    })
+                                });
+                                showNotice(t("paymentVerified"));
+                            } catch (error) {
+                                showNotice(`${t("paymentPendingVerification")} ${error.message}`, true);
+                            }
                             await loadStudentData();
-                        } catch (error) {
-                            showNotice(`${t("paymentPendingVerification")} ${error.message}`, true);
-                            await loadStudentData();
+                        } finally {
+                            studentPaymentInProgress = false;
                         }
                     },
-                    modal: { ondismiss: () => showNotice(t("checkoutCancelled")) },
+                    modal: {
+                        ondismiss: () => {
+                            studentPaymentInProgress = false;
+                            showNotice(t("checkoutCancelled"));
+                        }
+                    },
                     theme: { color: "#08765d" }
                 });
-                checkout.on("payment.failed", () => showNotice(t("paymentFailed"), true));
+                checkout.on("payment.failed", () => {
+                    studentPaymentInProgress = false;
+                    showNotice(t("paymentFailed"), true);
+                });
                 checkout.open();
             } catch (error) {
+                studentPaymentInProgress = false;
                 showNotice(error.message, true);
             }
         }
